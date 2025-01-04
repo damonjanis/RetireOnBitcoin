@@ -117,36 +117,38 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
   };
 
   return (
-    <div className="mb-4">
-      <div className="flex items-center gap-2 mb-1">
-        <label className="block text-sm font-medium text-gray-900">{label}</label>
-        <div className="relative inline-block">
-          <div
-            className="cursor-help"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
+    <div className="mb-2 sm:mb-4 max-w-full">
+      <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1">
+        <label className="block text-xs sm:text-sm font-medium text-gray-900 truncate">{label}</label>
+        <div className="relative inline-block flex-shrink-0">
+          <button
+            type="button"
+            className="p-0.5 sm:p-1.5 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onClick={() => setShowTooltip(!showTooltip)}
+            aria-label="Show information"
           >
-            <svg className="w-4 h-4 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {showTooltip && (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 -translate-y-2 w-64 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-10 normal-case">
-                <div className="relative">
-                  {tooltip}
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full w-2 h-2 bg-gray-900 rotate-45"></div>
-                </div>
+          </button>
+          {showTooltip && (
+            <div className="absolute z-10 w-48 sm:w-64 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white bg-gray-900 rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 bottom-full -translate-y-2">
+              <div className="relative">
+                {tooltip}
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full w-2 h-2 bg-gray-900 rotate-45"></div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
       <input
         type="text"
+        inputMode="decimal"
         value={inputValue}
         onChange={handleChange}
         onFocus={(e) => e.target.select()}
         disabled={disabled}
-        className="w-full p-2 border rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 text-gray-900"
+        className="w-full px-1.5 py-1 sm:p-2 text-sm border rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 text-gray-900"
       />
     </div>
   );
@@ -342,117 +344,131 @@ const BitcoinRetirementCalculator = () => {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 space-y-6">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">Bitcoin Retirement Calculator (Scaled Growth Model)</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <InputField 
-            label="Bitcoin Amount"
-            value={inputs.bitcoinAmount}
-            onChange={handleInputChange('bitcoinAmount')}
-            initialValue={inputs.bitcoinAmount}
-            tooltip="The number of bitcoins you own or plan to acquire. This is your core retirement asset."
-          />
-          <InputField 
-            label="Bitcoin Price (USD)"
-            value={inputs.bitcoinPrice}
-            onChange={handleInputChange('bitcoinPrice')}
-            initialValue={inputs.bitcoinPrice}
-            tooltip="Current or expected bitcoin price in USD. This is your starting point for future price projections."
-          />
-          <div>
+    <div className="flex flex-col items-center w-full max-w-6xl mx-auto">
+      <div className="bg-white rounded-lg shadow-lg w-full mx-2">
+        <div className="p-2 sm:p-6">
+          <h2 className="text-base sm:text-2xl font-bold mb-2 sm:mb-4 text-gray-900 text-center">
+            Bitcoin Retirement Calculator (Scaled Growth Model)
+          </h2>
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+              Bitcoin is the best form of money humans have ever created. Can you retire on Bitcoin? Can you keep your Bitcoin forever? Can you live off it without selling? Yes to all three. This calculator shows you how.
+            </p>
+            <p className="text-sm sm:text-base text-gray-700 leading-relaxed mt-2">
+              The strategy is simple: borrow against your Bitcoin, never sell it, pay no capital gains tax. This is how wealthy people have preserved and grown their wealth for centuries using real estate and other appreciating assets.
+            </p>
+            <p className="text-sm sm:text-base text-gray-700 leading-relaxed mt-2">
+              Input your Bitcoin holdings and parameters below. The calculator models Bitcoin's price growth over time and can optimize your annual expenses to maintain a safe 50% LTV ratio. View the results in the chart and table to see your potential wealth growth and sustainable spending level.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
             <InputField 
-              label="Annual Expenses (USD)"
-              value={useOptimalExpenses ? optimalExpenses : inputs.annualExpenses}
-              onChange={handleInputChange('annualExpenses')}
-              disabled={useOptimalExpenses}
-              initialValue={inputs.annualExpenses}
-              tooltip="How much you need each year for living expenses. Think rent/mortgage, food, utilities, etc."
+              label="Bitcoin Amount"
+              value={inputs.bitcoinAmount}
+              onChange={handleInputChange('bitcoinAmount')}
+              initialValue={inputs.bitcoinAmount}
+              tooltip="The number of bitcoins you own or plan to acquire. This is your core retirement asset."
             />
-            <div className="mt-2">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={useOptimalExpenses}
-                  onChange={(e) => setUseOptimalExpenses(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm font-medium text-gray-900">Calculate optimal annual expenses (Keep LTV ratio under 50%)</span>
-              </label>
-              
-              {useOptimalExpenses && (
-                <div className="bg-blue-50 p-2 rounded mt-2">
-                  <p className="text-sm font-medium text-blue-900">
-                    Optimal Annual Expenses: ${formatNumber(optimalExpenses)}
-                  </p>
-                </div>
-              )}
+            <InputField 
+              label="Bitcoin Price (USD)"
+              value={inputs.bitcoinPrice}
+              onChange={handleInputChange('bitcoinPrice')}
+              initialValue={inputs.bitcoinPrice}
+              tooltip="Current or expected bitcoin price in USD. This is your starting point for future price projections."
+            />
+            <div>
+              <InputField 
+                label="Annual Expenses (USD)"
+                value={useOptimalExpenses ? optimalExpenses : inputs.annualExpenses}
+                onChange={handleInputChange('annualExpenses')}
+                disabled={useOptimalExpenses}
+                initialValue={inputs.annualExpenses}
+                tooltip="How much you need each year for living expenses. Think rent/mortgage, food, utilities, etc."
+              />
+              <div className="mt-2">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={useOptimalExpenses}
+                    onChange={(e) => setUseOptimalExpenses(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm font-medium text-gray-900">Calculate optimal annual expenses (Keep LTV ratio under 50%)</span>
+                </label>
+                
+                {useOptimalExpenses && (
+                  <div className="bg-blue-50 p-2 rounded mt-2">
+                    <p className="text-sm font-medium text-blue-900">
+                      Optimal Annual Expenses: ${formatNumber(optimalExpenses)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <InputField 
+              label="Interest Rate (%)"
+              value={inputs.interestRate}
+              onChange={handleInputChange('interestRate')}
+              initialValue={inputs.interestRate}
+              tooltip="The rate you'll pay on borrowed money. Similar to a home equity loan rate."
+            />
+            <InputField 
+              label="Years"
+              value={inputs.years}
+              onChange={handleInputChange('years')}
+              initialValue={inputs.years}
+              tooltip="How many years you want to plan for. Longer timeframes give a better picture of long-term sustainability."
+            />
+            <InputField 
+              label="Inflation Rate (%)"
+              value={inputs.inflationRate}
+              onChange={handleInputChange('inflationRate')}
+              initialValue={inputs.inflationRate}
+              tooltip="Expected annual increase in living costs. Historically averages around 2-3% in the US."
+            />
+          </div>
+
+          <div className="bg-gray-50 rounded-lg mb-4 sm:mb-6 p-2 sm:p-4">
+            <h3 className="text-sm sm:text-lg font-medium mb-2 sm:mb-4 text-gray-900 text-center">Growth Rate Settings</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+              <InputField 
+                label="Initial Growth Rate (%)"
+                value={inputs.initialGrowthRate}
+                onChange={handleInputChange('initialGrowthRate')}
+                initialValue={inputs.initialGrowthRate}
+                tooltip="Expected annual bitcoin price growth rate in early years, higher due to adoption phase. Gradually decreases over 10 years until reaching the terminal rate."
+              />
+              <InputField 
+                label="Terminal Growth Rate (%)"
+                value={inputs.terminalGrowthRate}
+                onChange={handleInputChange('terminalGrowthRate')}
+                initialValue={inputs.terminalGrowthRate}
+                tooltip="Long-term growth rate used after year 10. Represents mature market growth."
+              />
             </div>
           </div>
-          <InputField 
-            label="Interest Rate (%)"
-            value={inputs.interestRate}
-            onChange={handleInputChange('interestRate')}
-            initialValue={inputs.interestRate}
-            tooltip="The rate you'll pay on borrowed money. Similar to a home equity loan rate."
-          />
-          <InputField 
-            label="Years"
-            value={inputs.years}
-            onChange={handleInputChange('years')}
-            initialValue={inputs.years}
-            tooltip="How many years you want to plan for. Longer timeframes give a better picture of long-term sustainability."
-          />
-          <InputField 
-            label="Inflation Rate (%)"
-            value={inputs.inflationRate}
-            onChange={handleInputChange('inflationRate')}
-            initialValue={inputs.inflationRate}
-            tooltip="Expected annual increase in living costs. Historically averages around 2-3% in the US."
-          />
-        </div>
 
-        <div className="bg-gray-50 p-4 rounded-lg mb-6">
-          <h3 className="text-lg font-medium mb-4 text-gray-900">Growth Rate Settings</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField 
-              label="Initial Growth Rate (%)"
-              value={inputs.initialGrowthRate}
-              onChange={handleInputChange('initialGrowthRate')}
-              initialValue={inputs.initialGrowthRate}
-              tooltip="Expected annual bitcoin price growth rate in early years, higher due to adoption phase. Gradually decreases over 10 years until reaching the terminal rate."
-            />
-            <InputField 
-              label="Terminal Growth Rate (%)"
-              value={inputs.terminalGrowthRate}
-              onChange={handleInputChange('terminalGrowthRate')}
-              initialValue={inputs.terminalGrowthRate}
-              tooltip="Long-term growth rate used after year 10. Represents mature market growth."
-            />
+          <GrowthRatesDisplay growthRates={growthRates} />
+          
+          <div className="mb-6">
+            <div className="h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={results}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="year" />
+                  <YAxis tickFormatter={formatYAxisTick} />
+                  <Tooltip formatter={(value) => `$${formatNumber(value)}`} />
+                  <Legend />
+                  <Line type="monotone" dataKey="portfolioValue" name="Portfolio Value" stroke="#2563eb" />
+                  <Line type="monotone" dataKey="totalDebt" name="Total Debt" stroke="#dc2626" />
+                  <Line type="monotone" dataKey="netWorth" name="Net Worth" stroke="#16a34a" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
 
-        <GrowthRatesDisplay growthRates={growthRates} />
-        
-        <div className="mb-6">
-          <div className="h-96">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={results}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" />
-                <YAxis tickFormatter={formatYAxisTick} />
-                <Tooltip formatter={(value) => `$${formatNumber(value)}`} />
-                <Legend />
-                <Line type="monotone" dataKey="portfolioValue" name="Portfolio Value" stroke="#2563eb" />
-                <Line type="monotone" dataKey="totalDebt" name="Total Debt" stroke="#dc2626" />
-                <Line type="monotone" dataKey="netWorth" name="Net Worth" stroke="#16a34a" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <ResultsTable results={results} />
         </div>
-
-        <ResultsTable results={results} />
       </div>
     </div>
   );
