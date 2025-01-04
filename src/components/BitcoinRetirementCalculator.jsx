@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Utility functions
 const generateGrowthRates = (initialRate, terminalRate, years) => {
   const rates = [];
-  const decay = (initialRate - terminalRate) / years;
+  const transitionYears = 9; // 9 steps to reach terminal rate at year 10
+  const decay = (initialRate - terminalRate) / transitionYears;
   
   for (let year = 1; year <= years; year++) {
-    const rate = Math.max(terminalRate, initialRate - (decay * (year - 1)));
+    const rate = year < 10 ? 
+      Math.max(terminalRate, initialRate - (decay * (year - 1))) :
+      terminalRate;
     rates.push({ year, rate: Math.round(rate * 100) / 100 });
   }
   return rates;
@@ -87,9 +90,17 @@ const parseFormattedNumber = (value) => {
   return parseFloat(value.replace(/,/g, ''));
 };
 
+const formatYAxisTick = (value) => {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(1)}M`;
+  }
+  return `$${formatNumber(value)}`;
+};
+
 // Input Field Component
-const InputField = ({ label, value, onChange, type = "number", disabled = false, initialValue }) => {
+const InputField = ({ label, value, onChange, type = "number", disabled = false, initialValue, tooltip }) => {
   const [inputValue, setInputValue] = useState(formatNumber(initialValue || value || 0));
+  const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
     setInputValue(formatNumber(value || 0));
@@ -107,7 +118,28 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
 
   return (
     <div className="mb-4">
-      <label className="block text-sm font-medium mb-1 text-gray-900">{label}</label>
+      <div className="flex items-center gap-2 mb-1">
+        <label className="block text-sm font-medium text-gray-900">{label}</label>
+        <div className="relative inline-block">
+          <div
+            className="cursor-help"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+          >
+            <svg className="w-4 h-4 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {showTooltip && (
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 -translate-y-2 w-64 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-10 normal-case">
+                <div className="relative">
+                  {tooltip}
+                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full w-2 h-2 bg-gray-900 rotate-45"></div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
       <input
         type="text"
         value={inputValue}
@@ -120,14 +152,84 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
   );
 };
 
+// Column header with tooltip component
+const ColumnHeader = ({ label, tooltip }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const tooltipRef = useRef(null);
+
+  const handleMouseEnter = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltipPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setShowTooltip(true);
+  };
+  
+  return (
+    <th className="text-right p-2 text-xs font-medium text-gray-700 uppercase tracking-wider">
+      <div className="flex items-center justify-end gap-1">
+        {label}
+        <div className="relative inline-block">
+          <div
+            className="cursor-help"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={() => setShowTooltip(false)}
+          >
+            <svg className="w-4 h-4 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      {showTooltip && (
+        <div
+          ref={tooltipRef}
+          style={{
+            position: 'fixed',
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+            transform: 'translate(-50%, -100%)',
+          }}
+          className="px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-[100] w-48 normal-case"
+        >
+          {tooltip}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-t-gray-900" />
+        </div>
+      )}
+    </th>
+  );
+};
+
 // Growth Rates Display Component
 const GrowthRatesDisplay = ({ growthRates }) => (
   <div className="mb-6">
-    <h3 className="text-lg font-medium mb-2 text-gray-900">Scaling Growth Rates</h3>
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
-      {growthRates.map(({ year, rate }) => (
-        <div key={year} className="text-sm bg-gray-50 p-2 rounded text-gray-900">
-          Year {year}: {rate}%
+    <div className="flex items-center justify-between mb-4">
+      <h3 className="text-lg font-semibold text-gray-900">Growth Rate Schedule</h3>
+      <div className="text-sm text-gray-500">
+        Initial: {growthRates[0]?.rate}% → Terminal: {growthRates[9]?.rate}%
+      </div>
+    </div>
+    <div className="grid grid-cols-10 gap-1 bg-white p-4 rounded-xl shadow-sm">
+      {growthRates.map(({ year, rate }, index) => (
+        <div 
+          key={year}
+          className={`relative p-3 rounded-lg ${
+            index === 9 ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'
+          }`}
+        >
+          <div className="text-xs font-medium text-gray-500 mb-1">Year {year}</div>
+          <div className={`text-lg font-semibold ${
+            index === 9 ? 'text-blue-600' : 'text-gray-900'
+          }`}>
+            {rate}%
+          </div>
+          {index < 9 && (
+            <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 text-gray-300">
+              →
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -140,14 +242,38 @@ const ResultsTable = ({ results }) => (
     <table className="w-full min-w-full divide-y divide-gray-200">
       <thead className="bg-gray-50">
         <tr>
-          <th className="text-left p-2 text-xs font-medium text-gray-700 uppercase tracking-wider">Year</th>
-          <th className="text-right p-2 text-xs font-medium text-gray-700 uppercase tracking-wider">Growth Rate</th>
-          <th className="text-right p-2 text-xs font-medium text-gray-700 uppercase tracking-wider">Bitcoin Price</th>
-          <th className="text-right p-2 text-xs font-medium text-gray-700 uppercase tracking-wider">Portfolio Value</th>
-          <th className="text-right p-2 text-xs font-medium text-gray-700 uppercase tracking-wider">Total Debt</th>
-          <th className="text-right p-2 text-xs font-medium text-gray-700 uppercase tracking-wider">Net Worth</th>
-          <th className="text-right p-2 text-xs font-medium text-gray-700 uppercase tracking-wider">LTV Ratio</th>
-          <th className="text-right p-2 text-xs font-medium text-gray-700 uppercase tracking-wider">Annual Expenses</th>
+          <ColumnHeader 
+            label="Year" 
+            tooltip="The year in your retirement timeline, starting from 0 (today)"
+          />
+          <ColumnHeader 
+            label="Growth Rate" 
+            tooltip="Bitcoin's expected price growth rate for this year. Transitions from initial to terminal rate over 10 years"
+          />
+          <ColumnHeader 
+            label="Bitcoin Price" 
+            tooltip="Projected Bitcoin price based on the growth rate. This determines your portfolio value"
+          />
+          <ColumnHeader 
+            label="Portfolio Value" 
+            tooltip="Total value of your Bitcoin holdings (Bitcoin Amount × Bitcoin Price)"
+          />
+          <ColumnHeader 
+            label="Total Debt" 
+            tooltip="Cumulative borrowed amount plus interest. This is what you owe from borrowing for living expenses"
+          />
+          <ColumnHeader 
+            label="Net Worth" 
+            tooltip="Portfolio Value minus Total Debt. This is your actual wealth after accounting for loans"
+          />
+          <ColumnHeader 
+            label="LTV Ratio" 
+            tooltip="Loan-to-Value ratio (Total Debt ÷ Portfolio Value). Should stay under 50% for safety"
+          />
+          <ColumnHeader 
+            label="Annual Expenses" 
+            tooltip="Living expenses for this year, increasing yearly with inflation"
+          />
         </tr>
       </thead>
       <tbody className="bg-white divide-y divide-gray-200">
@@ -226,12 +352,14 @@ const BitcoinRetirementCalculator = () => {
             value={inputs.bitcoinAmount}
             onChange={handleInputChange('bitcoinAmount')}
             initialValue={inputs.bitcoinAmount}
+            tooltip="The number of bitcoins you own or plan to acquire. This is your core retirement asset."
           />
           <InputField 
             label="Bitcoin Price (USD)"
             value={inputs.bitcoinPrice}
             onChange={handleInputChange('bitcoinPrice')}
             initialValue={inputs.bitcoinPrice}
+            tooltip="Current or expected bitcoin price in USD. This is your starting point for future price projections."
           />
           <div>
             <InputField 
@@ -240,6 +368,7 @@ const BitcoinRetirementCalculator = () => {
               onChange={handleInputChange('annualExpenses')}
               disabled={useOptimalExpenses}
               initialValue={inputs.annualExpenses}
+              tooltip="How much you need each year for living expenses. Think rent/mortgage, food, utilities, etc."
             />
             <div className="mt-2">
               <label className="flex items-center space-x-2">
@@ -266,18 +395,21 @@ const BitcoinRetirementCalculator = () => {
             value={inputs.interestRate}
             onChange={handleInputChange('interestRate')}
             initialValue={inputs.interestRate}
+            tooltip="The rate you'll pay on borrowed money. Similar to a home equity loan rate."
           />
           <InputField 
             label="Years"
             value={inputs.years}
             onChange={handleInputChange('years')}
             initialValue={inputs.years}
+            tooltip="How many years you want to plan for. Longer timeframes give a better picture of long-term sustainability."
           />
           <InputField 
             label="Inflation Rate (%)"
             value={inputs.inflationRate}
             onChange={handleInputChange('inflationRate')}
             initialValue={inputs.inflationRate}
+            tooltip="Expected annual increase in living costs. Historically averages around 2-3% in the US."
           />
         </div>
 
@@ -289,12 +421,14 @@ const BitcoinRetirementCalculator = () => {
               value={inputs.initialGrowthRate}
               onChange={handleInputChange('initialGrowthRate')}
               initialValue={inputs.initialGrowthRate}
+              tooltip="Expected annual bitcoin price growth rate in early years, higher due to adoption phase. Gradually decreases over 10 years until reaching the terminal rate."
             />
             <InputField 
               label="Terminal Growth Rate (%)"
               value={inputs.terminalGrowthRate}
               onChange={handleInputChange('terminalGrowthRate')}
               initialValue={inputs.terminalGrowthRate}
+              tooltip="Long-term growth rate used after year 10. Represents mature market growth."
             />
           </div>
         </div>
@@ -307,7 +441,7 @@ const BitcoinRetirementCalculator = () => {
               <LineChart data={results}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" />
-                <YAxis />
+                <YAxis tickFormatter={formatYAxisTick} />
                 <Tooltip formatter={(value) => `$${formatNumber(value)}`} />
                 <Legend />
                 <Line type="monotone" dataKey="portfolioValue" name="Portfolio Value" stroke="#2563eb" />
