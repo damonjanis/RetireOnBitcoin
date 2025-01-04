@@ -17,6 +17,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./retire-on-bitcoin
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,17 +32,18 @@ jobs:
           cache-dependency-path: './retire-on-bitcoin/package-lock.json'
       
       - name: Install dependencies
-        working-directory: ./retire-on-bitcoin
         run: npm ci
       
       - name: Build
-        working-directory: ./retire-on-bitcoin
         run: npm run build
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: ./retire-on-bitcoin/dist
+          path: dist
 
   deploy:
     needs: build
