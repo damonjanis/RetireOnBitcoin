@@ -27,13 +27,13 @@ jobs:
           node-version: 18
       
       - name: Install dependencies
-        working-directory: ./retire-on-bitcoin
         run: |
+          cd retire-on-bitcoin
           npm ci
       
       - name: Build
-        working-directory: ./retire-on-bitcoin
         run: |
+          cd retire-on-bitcoin
           npm run build
         env:
           NODE_ENV: production
