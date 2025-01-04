@@ -8,7 +8,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    copyPublicDir: true,
+    sourcemap: false,
+    minify: 'terser',
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name].[hash].js',
