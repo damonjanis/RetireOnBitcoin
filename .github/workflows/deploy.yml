@@ -20,8 +20,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          path: RetireOnBitcoin
+      
+      - name: Debug directory
+        run: |
+          pwd
+          ls -la
       
       - name: Set up Node
         uses: actions/setup-node@v3
@@ -29,14 +32,12 @@ jobs:
           node-version: 18
       
       - name: Install dependencies
-        run: |
-          cd RetireOnBitcoin/retire-on-bitcoin
-          npm ci
+        working-directory: .
+        run: npm ci
       
       - name: Build
-        run: |
-          cd RetireOnBitcoin/retire-on-bitcoin
-          npm run build
+        working-directory: .
+        run: npm run build
         env:
           NODE_ENV: production
       
@@ -46,7 +47,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: RetireOnBitcoin/retire-on-bitcoin/dist
+          path: dist
 
   deploy:
     needs: build
