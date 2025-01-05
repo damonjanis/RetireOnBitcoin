@@ -32,17 +32,21 @@ const calculateProjections = (inputs) => {
     // Then add new borrowing
     totalBorrowed += inflatedExpenses;
     
-    const portfolioValue = bitcoinValue * inputs.bitcoinAmount;
-    const totalDebt = totalBorrowed + totalInterest;
-    const netWorth = portfolioValue - totalDebt;
-    const ltvRatio = (totalDebt / portfolioValue) * 100;
-
     // Get growth rate for this year
     const growthRate = inputs.growthRates.find(g => g.year === year)?.rate || 
       inputs.growthRates[inputs.growthRates.length - 1].rate;
 
     // Apply growth for next year's starting price
     const nextBitcoinValue = bitcoinValue * (1 + growthRate/100);
+
+    // Calculate portfolio value using end of year price
+    const portfolioValue = nextBitcoinValue * inputs.bitcoinAmount;
+    const totalDebt = totalBorrowed + totalInterest;
+    const netWorth = portfolioValue - totalDebt;
+    
+    // Calculate LTV using beginning of year price
+    const startYearPortfolioValue = bitcoinValue * inputs.bitcoinAmount;
+    const ltvRatio = (totalDebt / startYearPortfolioValue) * 100;
 
     projections.push({
       year,
