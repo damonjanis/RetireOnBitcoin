@@ -117,22 +117,22 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
   };
 
   return (
-    <div className="mb-2 sm:mb-4 max-w-full">
-      <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1">
-        <label className="block text-xs sm:text-sm font-medium text-gray-900 truncate">{label}</label>
-        <div className="relative inline-block flex-shrink-0">
+    <div className="relative mb-3 sm:mb-4 w-full">
+      <div className="flex items-center gap-2 mb-1.5">
+        <label className="block text-sm sm:text-base font-medium text-gray-900 truncate flex-grow">{label}</label>
+        <div className="relative inline-block">
           <button
             type="button"
-            className="p-0.5 sm:p-1.5 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 touch-manipulation"
             onClick={() => setShowTooltip(!showTooltip)}
             aria-label="Show information"
           >
-            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
           {showTooltip && (
-            <div className="absolute z-10 w-48 sm:w-64 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white bg-gray-900 rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 bottom-full -translate-y-2">
+            <div className="absolute z-10 w-64 sm:w-72 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 bottom-full -translate-y-2">
               <div className="relative">
                 {tooltip}
                 <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full w-2 h-2 bg-gray-900 rotate-45"></div>
@@ -148,7 +148,7 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
         onChange={handleChange}
         onFocus={(e) => e.target.select()}
         disabled={disabled}
-        className="w-full px-1.5 py-1 sm:p-2 text-sm border rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 text-gray-900"
+        className="w-full px-3 py-2 text-base sm:text-lg border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 text-gray-900"
       />
     </div>
   );
@@ -361,7 +361,7 @@ const BitcoinRetirementCalculator = () => {
               Input your Bitcoin holdings and parameters below. The calculator models Bitcoin's price growth over time and can optimize your annual expenses to maintain a safe 50% LTV ratio. View the results in the chart and table to see your potential wealth growth and sustainable spending level.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 mb-6">
             <InputField 
               label="Bitcoin Amount"
               value={inputs.bitcoinAmount}
@@ -376,7 +376,7 @@ const BitcoinRetirementCalculator = () => {
               initialValue={inputs.bitcoinPrice}
               tooltip="Current or expected bitcoin price in USD. This is your starting point for future price projections."
             />
-            <div>
+            <div className="space-y-3">
               <InputField 
                 label="Annual Expenses (USD)"
                 value={useOptimalExpenses ? optimalExpenses : inputs.annualExpenses}
@@ -385,19 +385,19 @@ const BitcoinRetirementCalculator = () => {
                 initialValue={inputs.annualExpenses}
                 tooltip="How much you need each year for living expenses. Think rent/mortgage, food, utilities, etc."
               />
-              <div className="mt-2">
-                <label className="flex items-center space-x-2">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <label className="flex items-center gap-3 cursor-pointer touch-manipulation">
                   <input
                     type="checkbox"
                     checked={useOptimalExpenses}
                     onChange={(e) => setUseOptimalExpenses(e.target.checked)}
-                    className="rounded border-gray-300"
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-sm font-medium text-gray-900">Calculate optimal annual expenses (Keep LTV ratio under 50%)</span>
                 </label>
                 
                 {useOptimalExpenses && (
-                  <div className="bg-blue-50 p-2 rounded mt-2">
+                  <div className="bg-blue-50 p-3 rounded-lg mt-3">
                     <p className="text-sm font-medium text-blue-900">
                       Optimal Annual Expenses: ${formatNumber(optimalExpenses)}
                     </p>
@@ -428,9 +428,9 @@ const BitcoinRetirementCalculator = () => {
             />
           </div>
 
-          <div className="bg-gray-50 rounded-lg mb-4 sm:mb-6 p-2 sm:p-4">
-            <h3 className="text-sm sm:text-lg font-medium mb-2 sm:mb-4 text-gray-900 text-center">Growth Rate Settings</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+          <div className="bg-gray-50 rounded-lg mb-6 p-4 md:p-6">
+            <h3 className="text-lg font-medium mb-4 text-gray-900 text-center">Growth Rate Settings</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <InputField 
                 label="Initial Growth Rate (%)"
                 value={inputs.initialGrowthRate}
