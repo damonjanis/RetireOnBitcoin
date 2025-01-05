@@ -58,7 +58,7 @@ const calculateProjections = (inputs) => {
       totalInterest: Math.round(totalInterest),
       totalDebt: Math.round(totalDebt),
       netWorth: Math.round(netWorth),
-      ltvRatio: Math.round(ltvRatio * 100) / 100,
+      ltvRatio: Math.round(ltvRatio),
       annualExpenses: Math.round(inflatedExpenses)
     });
 
