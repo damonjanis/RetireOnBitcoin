@@ -22,22 +22,31 @@ const calculateProjections = (inputs) => {
   let totalInterest = 0;
   let inflatedExpenses = inputs.annualExpenses;
 
-  for (let year = 0; year <= inputs.years; year++) {
-    const growthRate = year === 0 ? 0 : 
-      (inputs.growthRates.find(g => g.year === year)?.rate || inputs.growthRates[inputs.growthRates.length - 1].rate);
+  // Add initial "Today" snapshot
+  projections.push({
+    year: 'Today',
+    growthRate: 0,
+    bitcoinPrice: inputs.bitcoinPrice,
+    portfolioValue: inputs.bitcoinPrice * inputs.bitcoinAmount,
+    totalBorrowed: 0,
+    totalInterest: 0,
+    totalDebt: 0,
+    netWorth: inputs.bitcoinPrice * inputs.bitcoinAmount,
+    ltvRatio: 0,
+    annualExpenses: 0
+  });
 
-    const bitcoinValue = year === 0 ? inputs.bitcoinPrice :
-      projections[year - 1].bitcoinPrice * (1 + growthRate/100);
-    
+  for (let i = 0; i < inputs.years; i++) {
+    const year = i + 1; // Convert to 1-based numbering
+    const growthRate = inputs.growthRates.find(g => g.year === year)?.rate || 
+      inputs.growthRates[inputs.growthRates.length - 1].rate;
+
+    const bitcoinValue = projections[projections.length - 1].bitcoinPrice * (1 + growthRate/100);
     const portfolioValue = bitcoinValue * inputs.bitcoinAmount;
     
-    if (year > 0) {
-      totalBorrowed += inflatedExpenses;
-      totalInterest += totalBorrowed * (inputs.interestRate/100);
-      // Increase expenses by inflation rate for next year
-      inflatedExpenses *= (1 + inputs.inflationRate/100);
-    }
-
+    totalBorrowed += inflatedExpenses;
+    totalInterest += totalBorrowed * (inputs.interestRate/100);
+    
     const totalDebt = totalBorrowed + totalInterest;
     const netWorth = portfolioValue - totalDebt;
     const ltvRatio = (totalDebt / portfolioValue) * 100;
@@ -54,6 +63,9 @@ const calculateProjections = (inputs) => {
       ltvRatio: Math.round(ltvRatio * 100) / 100,
       annualExpenses: Math.round(inflatedExpenses)
     });
+
+    // Increase expenses by inflation rate for next year
+    inflatedExpenses *= (1 + inputs.inflationRate/100);
   }
 
   return projections;
@@ -394,7 +406,7 @@ const ResultsTable = ({ results }) => {
               <tr className="bg-gray-50">
                 <ColumnHeader 
                   label="Year" 
-                  tooltip="The year in your retirement timeline, starting from 0 (today)"
+                  tooltip="Shows your current position (Today) followed by each year of implementing the strategy (Year 1 onwards)"
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
                 <ColumnHeader 
@@ -440,7 +452,9 @@ const ResultsTable = ({ results }) => {
                   key={row.year} 
                   className={`hover:bg-gray-50 text-gray-900 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                 >
-                  <td className="sticky left-0 bg-inherit whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm font-medium border-r border-gray-200">{row.year}</td>
+                  <td className="sticky left-0 bg-inherit whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm font-medium border-r border-gray-200">
+                    {row.year === 'Today' ? 'Today' : row.year}
+                  </td>
                   <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right">{row.growthRate}%</td>
                   <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right">${formatNumber(row.bitcoinPrice)}</td>
                   <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right font-medium text-blue-600">${formatNumber(row.portfolioValue)}</td>
@@ -622,7 +636,7 @@ const BitcoinRetirementCalculator = () => {
                           value={inputs.maxLTV}
                           onChange={handleInputChange('maxLTV')}
                           initialValue={inputs.maxLTV}
-                          tooltip="Maximum Loan-to-Value ratio you're comfortable with. Higher ratios mean more risk but allow higher spending."
+                          tooltip="Maximum Loan-to-Value ratio you're comfortable with. Higher ratios mean more risk but allow higher spending. Recommended to stay at or below 50%."
                         />
                         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                           <div className="flex items-center justify-between">
