@@ -468,6 +468,84 @@ const ResultsTable = ({ results }) => {
   );
 };
 
+// Technical Details Component
+const TechnicalDetails = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="w-full bg-gray-100 rounded-lg shadow p-4">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between text-left text-gray-900 hover:text-gray-600 transition-colors bg-gray-100"
+      >
+        <span className="text-lg font-medium">Technical Details</span>
+        <svg
+          className={`w-6 h-6 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      
+      {isExpanded && (
+        <div className="mt-4 space-y-6 text-sm text-gray-800">
+          <section>
+            <h4 className="font-semibold text-gray-900 mb-2">Bitcoin Price Growth Model</h4>
+            <p className="mb-2">The calculator uses a scaled growth model where Bitcoin's growth rate decreases over time:</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Starts at the specified initial growth rate (default 60%)</li>
+              <li>Linearly decreases over 9 years to reach the terminal rate in year 10</li>
+              <li>Maintains the terminal rate (default 15%) for all subsequent years</li>
+              <li>Formula: rate = max(terminalRate, initialRate - (decay * (year - 1)))</li>
+              <li>Where decay = (initialRate - terminalRate) / 9</li>
+            </ul>
+          </section>
+
+          <section>
+            <h4 className="font-semibold text-gray-900 mb-2">Debt and Interest Calculations</h4>
+            <p className="mb-2">For each year, the calculator:</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Calculates interest on existing debt: totalInterest += totalBorrowed * (interestRate/100)</li>
+              <li>Adds new borrowing for annual expenses: totalBorrowed += inflatedExpenses</li>
+              <li>Updates expenses for inflation: inflatedExpenses *= (1 + inflationRate/100)</li>
+              <li>Calculates total debt: totalDebt = totalBorrowed + totalInterest</li>
+            </ul>
+          </section>
+
+          <section>
+            <h4 className="font-semibold text-gray-900 mb-2">Portfolio and LTV Calculations</h4>
+            <p className="mb-2">For each year, the calculator computes:</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Portfolio value: bitcoinPrice * bitcoinAmount</li>
+              <li>Net worth: portfolioValue - totalDebt</li>
+              <li>LTV ratio: (totalDebt / portfolioValue) * 100</li>
+            </ul>
+          </section>
+
+          <section>
+            <h4 className="font-semibold text-gray-900 mb-2">Optimal Expenses Calculation</h4>
+            <p className="mb-2">When finding optimal annual expenses, the calculator:</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Uses binary search to find the maximum safe annual expenses</li>
+              <li>Tests different expense levels between $0 and portfolio value</li>
+              <li>For each test, runs a full projection to check if LTV stays under the specified maximum</li>
+              <li>Continues narrowing the range until finding the optimal value within $100 precision</li>
+            </ul>
+          </section>
+
+          <div className="mt-6 p-4 bg-gray-100 border border-gray-200 rounded-lg">
+            <p className="text-sm text-gray-900">
+              <strong>Note:</strong> This model makes several simplifying assumptions. It doesn't account for varying interest rates, potential margin calls, or changes in lending policies. Always consult with financial professionals for personalized advice.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main Component
 const BitcoinRetirementCalculator = () => {
   const [inputs, setInputs] = useState({
@@ -720,7 +798,11 @@ const BitcoinRetirementCalculator = () => {
             </div>
           </div>
 
-          <ResultsTable results={results} />
+          <div className="mb-6 bg-white rounded-lg shadow p-4 md:p-6">
+            <ResultsTable results={results} />
+          </div>
+
+          <TechnicalDetails />
         </div>
       </div>
     </div>
