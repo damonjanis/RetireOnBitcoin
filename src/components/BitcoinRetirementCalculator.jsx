@@ -521,7 +521,7 @@ const BitcoinRetirementCalculator = () => {
               The strategy is simple: borrow against your Bitcoin, never sell it, pay no capital gains tax. This is how wealthy people have preserved and grown their wealth for centuries using real estate and other appreciating assets.
             </p>
             <p className="text-sm sm:text-base text-gray-700 leading-relaxed mt-2">
-              Input your Bitcoin holdings and parameters below. The calculator models Bitcoin's price growth over time and can optimize your annual expenses to maintain a safe 50% LTV ratio. View the results in the chart and table to see your potential wealth growth and sustainable spending level.
+              Input your Bitcoin holdings and parameters below. The calculator models Bitcoin's price growth over time and can optimize your annual expenses to maintain a safe LTV ratio that you specify. View the results in the chart and table to see your potential wealth growth and sustainable spending level.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 mb-6">
