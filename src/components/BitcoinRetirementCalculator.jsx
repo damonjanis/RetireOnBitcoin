@@ -572,7 +572,7 @@ const BitcoinRetirementCalculator = () => {
   });
 
   const [results, setResults] = useState([]);
-  const [useOptimalExpenses, setUseOptimalExpenses] = useState(false);
+  const [useOptimalExpenses, setUseOptimalExpenses] = useState(true);
   const [optimalExpenses, setOptimalExpenses] = useState(0);
 
   const growthRates = useMemo(() => 
@@ -676,33 +676,6 @@ const BitcoinRetirementCalculator = () => {
                   <label className="flex items-center gap-3 cursor-pointer touch-manipulation">
                     <input
                       type="radio"
-                      checked={!useOptimalExpenses}
-                      onChange={() => setUseOptimalExpenses(false)}
-                      className="w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
-                      name="expensesMode"
-                    />
-                    <div className="flex-grow">
-                      <span className="text-sm font-medium text-gray-900">Manual Entry</span>
-                      <p className="text-xs text-gray-500 mt-1">Enter your desired annual expenses manually</p>
-                    </div>
-                  </label>
-                  {!useOptimalExpenses && (
-                    <div className="mt-3 ml-7">
-                      <InputField 
-                        label="Annual Expenses (USD)"
-                        value={inputs.annualExpenses}
-                        onChange={handleInputChange('annualExpenses')}
-                        initialValue={inputs.annualExpenses}
-                        tooltip="How much you need each year for living expenses. Think rent/mortgage, food, utilities, etc."
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t border-gray-200 pt-4">
-                  <label className="flex items-center gap-3 cursor-pointer touch-manipulation">
-                    <input
-                      type="radio"
                       checked={useOptimalExpenses}
                       onChange={() => setUseOptimalExpenses(true)}
                       className="w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -733,6 +706,33 @@ const BitcoinRetirementCalculator = () => {
                           </p>
                         </div>
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <label className="flex items-center gap-3 cursor-pointer touch-manipulation">
+                    <input
+                      type="radio"
+                      checked={!useOptimalExpenses}
+                      onChange={() => setUseOptimalExpenses(false)}
+                      className="w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                      name="expensesMode"
+                    />
+                    <div className="flex-grow">
+                      <span className="text-sm font-medium text-gray-900">Manual Entry</span>
+                      <p className="text-xs text-gray-500 mt-1">Enter your desired annual expenses manually</p>
+                    </div>
+                  </label>
+                  {!useOptimalExpenses && (
+                    <div className="mt-3 ml-7">
+                      <InputField 
+                        label="Annual Expenses (USD)"
+                        value={inputs.annualExpenses}
+                        onChange={handleInputChange('annualExpenses')}
+                        initialValue={inputs.annualExpenses}
+                        tooltip="How much you need each year for living expenses. Think rent/mortgage, food, utilities, etc."
+                      />
                     </div>
                   )}
                 </div>
