@@ -47,7 +47,8 @@ const calculateProjections = (inputs) => {
     projections.push({
       year,
       growthRate,
-      bitcoinPrice: Math.round(i === 0 ? bitcoinValue : nextBitcoinValue),
+      bitcoinPriceStart: Math.round(bitcoinValue),
+      bitcoinPriceEnd: Math.round(nextBitcoinValue),
       portfolioValue: Math.round(portfolioValue),
       totalBorrowed: Math.round(totalBorrowed),
       totalInterest: Math.round(totalInterest),
@@ -411,8 +412,13 @@ const ResultsTable = ({ results }) => {
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
                 <ColumnHeader 
-                  label="BTC Price" 
-                  tooltip="Bitcoin price used for calculations. Year 1 shows starting price, subsequent years show price after previous year's growth"
+                  label="BTC Price Start" 
+                  tooltip="Bitcoin price at the start of the year"
+                  className="text-xs sm:text-[11px] md:text-sm"
+                />
+                <ColumnHeader 
+                  label="BTC Price End" 
+                  tooltip="Bitcoin price at the end of the year, after growth"
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
                 <ColumnHeader 
@@ -452,7 +458,8 @@ const ResultsTable = ({ results }) => {
                     {row.year === 'Today' ? 'Today' : row.year}
                   </td>
                   <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right">{row.growthRate}%</td>
-                  <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right">${formatNumber(row.bitcoinPrice)}</td>
+                  <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right">${formatNumber(row.bitcoinPriceStart)}</td>
+                  <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right">${formatNumber(row.bitcoinPriceEnd)}</td>
                   <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right font-medium text-blue-600">${formatNumber(row.portfolioValue)}</td>
                   <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right font-medium text-red-600">${formatNumber(row.totalDebt)}</td>
                   <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right font-medium text-green-600">${formatNumber(row.netWorth)}</td>
