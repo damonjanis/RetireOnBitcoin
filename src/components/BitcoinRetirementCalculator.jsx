@@ -26,9 +26,11 @@ const calculateProjections = (inputs) => {
   for (let i = 0; i < inputs.years; i++) {
     const year = i + 1;
     
-    // First calculate debt at start of year
-    totalBorrowed += inflatedExpenses;
+    // First calculate interest on existing debt
     totalInterest += totalBorrowed * (inputs.interestRate/100);
+    
+    // Then add new borrowing
+    totalBorrowed += inflatedExpenses;
     
     const portfolioValue = bitcoinValue * inputs.bitcoinAmount;
     const totalDebt = totalBorrowed + totalInterest;
