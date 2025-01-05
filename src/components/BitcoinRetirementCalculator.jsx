@@ -344,10 +344,10 @@ const BitcoinRetirementCalculator = () => {
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-6xl mx-auto">
-      <div className="bg-white rounded-lg shadow-lg w-full mx-2">
-        <div className="p-2 sm:p-6">
-          <h2 className="text-base sm:text-2xl font-bold mb-2 sm:mb-4 text-gray-900 text-center">
+    <div className="flex flex-col items-center w-full max-w-6xl mx-auto p-4">
+      <div className="bg-white rounded-lg shadow-lg w-full mx-auto max-w-[95vw] sm:max-w-[90vw] md:max-w-[85vw]">
+        <div className="p-4 sm:p-6 md:p-8">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-gray-900 text-center">
             Bitcoin Retirement Calculator (Scaled Growth Model)
           </h2>
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
