@@ -156,9 +156,8 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
   const [inputValue, setInputValue] = useState(isLoading ? "grabbing..." : formatNumber(initialValue || value || 0));
   const [isEditing, setIsEditing] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0, align: 'center' });
-  const inputRef = useRef(null);
   const tooltipRef = useRef(null);
+  const labelRef = useRef(null);
 
   useEffect(() => {
     if (!isLoading && !isEditing) {
@@ -169,7 +168,6 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
   const handleFocus = (e) => {
     if (!disabled && !isLoading) {
       setIsEditing(true);
-      // Use setTimeout to ensure the selection happens after the value is set
       setTimeout(() => {
         if (e.target) {
           e.target.select();
@@ -199,45 +197,18 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
     }
   };
 
-  const handleMouseEnter = (e) => {
-    if (!tooltip) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const tooltipWidth = 250; // Approximate width of tooltip
-    const windowWidth = window.innerWidth;
-    let align = 'center';
-    let x = rect.left + (rect.width / 2);
-
-    // Check if tooltip would overflow right edge
-    if (x + (tooltipWidth / 2) > windowWidth) {
-      x = rect.left;
-      align = 'left';
-    }
-    // Check if tooltip would overflow left edge
-    else if (x - (tooltipWidth / 2) < 0) {
-      x = rect.left;
-      align = 'left';
-    }
-
-    setTooltipPosition({
-      x,
-      y: rect.bottom + window.scrollY + 5,
-      align
-    });
-    setShowTooltip(true);
-  };
-
   return (
     <div className="relative">
       <label className="block text-sm font-medium text-gray-700 mb-1">
         {label}
         {tooltip && (
           <span 
-            className="ml-1 text-gray-400 hover:text-gray-500 cursor-help"
-            onMouseEnter={handleMouseEnter}
+            ref={labelRef}
+            className="ml-1 text-gray-400 hover:text-gray-500 cursor-help inline-flex items-center"
+            onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
           >
-            <svg className="inline-block w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </span>
@@ -256,15 +227,23 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
       {showTooltip && tooltip && (
         <div
           ref={tooltipRef}
-          className="absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm tooltip dark:bg-gray-700"
+          className="absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm tooltip dark:bg-gray-700 whitespace-pre-wrap"
           style={{
-            left: `${tooltipPosition.x}px`,
-            top: `${tooltipPosition.y}px`,
-            transform: tooltipPosition.align === 'center' ? 'translateX(-50%)' : 'translate(-100%, -50%)',
+            left: '0',
+            top: '-0.5rem',
+            transform: 'translateY(-100%)',
             maxWidth: '250px'
           }}
         >
           {tooltip}
+          <div 
+            className="absolute w-2 h-2 bg-gray-900 dark:bg-gray-700"
+            style={{
+              bottom: '-0.25rem',
+              left: '1rem',
+              transform: 'rotate(45deg)'
+            }}
+          />
         </div>
       )}
     </div>
