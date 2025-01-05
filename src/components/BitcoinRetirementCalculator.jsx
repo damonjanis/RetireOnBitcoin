@@ -110,6 +110,18 @@ const formatYAxisTick = (value) => {
   return `$${formatNumber(value)}`;
 };
 
+const fetchBitcoinPrice = async () => {
+  try {
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    if (!response.ok) throw new Error('Failed to fetch Bitcoin price');
+    const data = await response.json();
+    return Math.round(data.bitcoin.usd);
+  } catch (error) {
+    console.warn('Failed to fetch Bitcoin price, using default:', error);
+    return 100000;
+  }
+};
+
 // Input Field Component
 const InputField = ({ label, value, onChange, type = "number", disabled = false, initialValue, tooltip }) => {
   const [inputValue, setInputValue] = useState(formatNumber(initialValue || value || 0));
@@ -561,7 +573,7 @@ const TechnicalDetails = ({ inputs, results }) => {
 const BitcoinRetirementCalculator = () => {
   const [inputs, setInputs] = useState({
     bitcoinAmount: 3.2,
-    bitcoinPrice: 100000,
+    bitcoinPrice: 100000, // This will be updated by useEffect
     annualExpenses: 150000,
     interestRate: 8,
     years: 20,
@@ -579,6 +591,17 @@ const BitcoinRetirementCalculator = () => {
     generateGrowthRates(inputs.initialGrowthRate, inputs.terminalGrowthRate, inputs.years),
     [inputs.initialGrowthRate, inputs.terminalGrowthRate, inputs.years]
   );
+
+  useEffect(() => {
+    const updateBitcoinPrice = async () => {
+      const price = await fetchBitcoinPrice();
+      setInputs(prev => ({
+        ...prev,
+        bitcoinPrice: price
+      }));
+    };
+    updateBitcoinPrice();
+  }, []);
 
   useEffect(() => {
     const calculationInputs = {
