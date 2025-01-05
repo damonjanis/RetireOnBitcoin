@@ -110,105 +110,158 @@ const formatYAxisTick = (value) => {
   return `$${formatNumber(value)}`;
 };
 
+let lastSuccessfulFetch = 0;
+const FETCH_COOLDOWN_MS = 60000; // 1 minute in milliseconds
+
 const fetchBitcoinPrice = async () => {
+  const now = Date.now();
+  if (lastSuccessfulFetch && (now - lastSuccessfulFetch) < FETCH_COOLDOWN_MS) {
+    console.warn('Rate limited: Please wait a minute between price refreshes');
+    throw new Error('Rate limited: Please wait a minute between price refreshes');
+  }
+
   try {
-    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
-    if (!response.ok) throw new Error('Failed to fetch Bitcoin price');
+    // Using CoinGecko's public CORS-enabled API endpoint
+    const response = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (response.status === 429) {
+      throw new Error('Rate limited by CoinGecko API. Please try again in a minute.');
+    }
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Bitcoin price: ${response.status}`);
+    }
+    
     const data = await response.json();
-    return Math.round(data.bitcoin.usd);
+    const price = Math.round(data.market_data.current_price.usd);
+    lastSuccessfulFetch = now;
+    return price;
   } catch (error) {
-    console.warn('Failed to fetch Bitcoin price, using default:', error);
-    return 100000;
+    console.warn('Failed to fetch Bitcoin price:', error);
+    if (!lastSuccessfulFetch) {
+      // If we've never successfully fetched, use default
+      return 100000;
+    }
+    throw error; // Re-throw to keep using the last successful price
   }
 };
 
 // Input Field Component
-const InputField = ({ label, value, onChange, type = "number", disabled = false, initialValue, tooltip }) => {
-  const [inputValue, setInputValue] = useState(formatNumber(initialValue || value || 0));
+const InputField = ({ label, value, onChange, type = "number", disabled = false, initialValue, tooltip, isLoading = false }) => {
+  const [inputValue, setInputValue] = useState(isLoading ? "grabbing..." : formatNumber(initialValue || value || 0));
+  const [isEditing, setIsEditing] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0, align: 'center' });
+  const inputRef = useRef(null);
   const tooltipRef = useRef(null);
 
   useEffect(() => {
-    setInputValue(formatNumber(value || 0));
-  }, [value]);
+    if (!isLoading && !isEditing) {
+      setInputValue(formatNumber(value));
+    }
+  }, [value, isLoading]);
+
+  const handleFocus = () => {
+    if (!disabled && !isLoading) {
+      setIsEditing(true);
+      if (type === "number") {
+        setInputValue(value.toString());
+      }
+    }
+  };
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (type === "number" && !isLoading) {
+      const parsedValue = parseFormattedNumber(inputValue);
+      onChange(parsedValue);
+      setInputValue(formatNumber(parsedValue));
+    }
+  };
 
   const handleChange = (e) => {
-    const newValue = e.target.value.replace(/[^\d.,]/g, '');
-    setInputValue(newValue);
-    
-    const parsed = parseFormattedNumber(newValue);
-    if (!isNaN(parsed)) {
-      onChange(parsed);
+    if (!disabled && !isLoading) {
+      const newValue = e.target.value.replace(/[^\d.,]/g, '');
+      setInputValue(newValue);
+      
+      const parsed = parseFormattedNumber(newValue);
+      if (!isNaN(parsed)) {
+        onChange(parsed);
+      }
     }
   };
 
   const handleMouseEnter = (e) => {
+    if (!tooltip) return;
+
     const rect = e.currentTarget.getBoundingClientRect();
+    const tooltipWidth = 250; // Approximate width of tooltip
     const windowWidth = window.innerWidth;
-    const isMobile = windowWidth <= 640; // sm breakpoint
-    
-    // For mobile, check if we're too close to the right edge
-    if (isMobile && rect.right > windowWidth - 100) {
-      setTooltipPosition({
-        x: rect.left - 10,
-        y: rect.top + rect.height / 2,
-        align: 'right'
-      });
-    } else {
-      setTooltipPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top - 10,
-        align: 'center'
-      });
+    let align = 'center';
+    let x = rect.left + (rect.width / 2);
+
+    // Check if tooltip would overflow right edge
+    if (x + (tooltipWidth / 2) > windowWidth) {
+      x = rect.left;
+      align = 'left';
     }
+    // Check if tooltip would overflow left edge
+    else if (x - (tooltipWidth / 2) < 0) {
+      x = rect.left;
+      align = 'left';
+    }
+
+    setTooltipPosition({
+      x,
+      y: rect.bottom + window.scrollY + 5,
+      align
+    });
     setShowTooltip(true);
   };
 
   return (
-    <div className="relative mb-3 sm:mb-4 w-full">
-      <div className="flex items-center gap-2 mb-1.5">
-        <label className="block text-sm sm:text-base font-medium text-gray-900 truncate flex-grow">{label}</label>
-        <div className="relative inline-block">
-          <div
-            className="cursor-help"
+    <div className="relative">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+        {tooltip && (
+          <span 
+            className="ml-1 text-gray-400 hover:text-gray-500 cursor-help"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={() => setShowTooltip(false)}
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="inline-block w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-          </div>
-        </div>
-      </div>
+          </span>
+        )}
+      </label>
       <input
         type="text"
         inputMode="decimal"
         value={inputValue}
         onChange={handleChange}
-        onFocus={(e) => e.target.select()}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         disabled={disabled}
         className="w-full px-3 py-2 text-base sm:text-lg border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 text-gray-900"
       />
-      {showTooltip && (
+      {showTooltip && tooltip && (
         <div
           ref={tooltipRef}
+          className="absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm tooltip dark:bg-gray-700"
           style={{
-            position: 'fixed',
             left: `${tooltipPosition.x}px`,
             top: `${tooltipPosition.y}px`,
-            transform: tooltipPosition.align === 'center' 
-              ? 'translate(-50%, -100%)' 
-              : 'translate(-100%, -50%)',
+            transform: tooltipPosition.align === 'center' ? 'translateX(-50%)' : 'translate(-100%, -50%)',
+            maxWidth: '250px'
           }}
-          className="px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-[100] w-48 sm:w-56 normal-case"
         >
           {tooltip}
-          {tooltipPosition.align === 'center' ? (
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-t-gray-900" />
-          ) : (
-            <div className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-l-gray-900" />
-          )}
         </div>
       )}
     </div>
@@ -573,15 +626,18 @@ const TechnicalDetails = ({ inputs, results }) => {
 const BitcoinRetirementCalculator = () => {
   const [inputs, setInputs] = useState({
     bitcoinAmount: 3.2,
-    bitcoinPrice: 100000, // This will be updated by useEffect
+    bitcoinPrice: null,
     annualExpenses: 150000,
     interestRate: 8,
     years: 20,
     initialGrowthRate: 60,
     terminalGrowthRate: 15,
     inflationRate: 3,
-    maxLTV: 50 // Add maxLTV to inputs
+    maxLTV: 50
   });
+
+  const [isFetchingPrice, setIsFetchingPrice] = useState(true);
+  const [priceError, setPriceError] = useState(null);
 
   const [results, setResults] = useState([]);
   const [useOptimalExpenses, setUseOptimalExpenses] = useState(true);
@@ -592,32 +648,51 @@ const BitcoinRetirementCalculator = () => {
     [inputs.initialGrowthRate, inputs.terminalGrowthRate, inputs.years]
   );
 
-  useEffect(() => {
-    const updateBitcoinPrice = async () => {
+  const updateBitcoinPrice = async () => {
+    setIsFetchingPrice(true);
+    setPriceError(null);
+    try {
       const price = await fetchBitcoinPrice();
       setInputs(prev => ({
         ...prev,
         bitcoinPrice: price
       }));
-    };
+    } catch (error) {
+      setPriceError(error.message);
+      // Keep the previous price if we had one
+      if (inputs.bitcoinPrice === null) {
+        setInputs(prev => ({
+          ...prev,
+          bitcoinPrice: 100000
+        }));
+      }
+    } finally {
+      setIsFetchingPrice(false);
+    }
+  };
+
+  useEffect(() => {
     updateBitcoinPrice();
   }, []);
 
   useEffect(() => {
-    const calculationInputs = {
-      ...inputs,
-      growthRates,
-      annualExpenses: useOptimalExpenses ? optimalExpenses : inputs.annualExpenses
-    };
+    // Only run calculations if we have a valid bitcoin price
+    if (inputs.bitcoinPrice !== null) {
+      const calculationInputs = {
+        ...inputs,
+        growthRates,
+        annualExpenses: useOptimalExpenses ? optimalExpenses : inputs.annualExpenses
+      };
 
-    if (useOptimalExpenses) {
-      const optimal = findOptimalAnnualExpenses({ ...calculationInputs, growthRates });
-      setOptimalExpenses(optimal);
-      const newResults = calculateProjections({ ...calculationInputs, annualExpenses: optimal });
-      setResults(newResults);
-    } else {
-      const newResults = calculateProjections(calculationInputs);
-      setResults(newResults);
+      if (useOptimalExpenses) {
+        const optimal = findOptimalAnnualExpenses({ ...calculationInputs, growthRates });
+        setOptimalExpenses(optimal);
+        const newResults = calculateProjections({ ...calculationInputs, annualExpenses: optimal });
+        setResults(newResults);
+      } else {
+        const newResults = calculateProjections(calculationInputs);
+        setResults(newResults);
+      }
     }
   }, [inputs, useOptimalExpenses, growthRates]);
 
@@ -659,7 +734,9 @@ const BitcoinRetirementCalculator = () => {
               value={inputs.bitcoinPrice}
               onChange={handleInputChange('bitcoinPrice')}
               initialValue={inputs.bitcoinPrice}
-              tooltip="Current or expected bitcoin price in USD. This is your starting point for future price projections."
+              tooltip={`Current or expected bitcoin price in USD. This is your starting point for future price projections. ${priceError ? '\n' + priceError : ''}`}
+              isLoading={isFetchingPrice}
+              disabled={isFetchingPrice}
             />
             <InputField 
               label="Interest Rate (%)"
@@ -711,23 +788,21 @@ const BitcoinRetirementCalculator = () => {
                   </label>
                   {useOptimalExpenses && (
                     <div className="mt-3 ml-7">
-                      <div className="space-y-3">
-                        <InputField 
-                          label="Max LTV Ratio (%)"
-                          value={inputs.maxLTV}
-                          onChange={handleInputChange('maxLTV')}
-                          initialValue={inputs.maxLTV}
-                          tooltip="Maximum Loan-to-Value ratio you're comfortable with. Higher ratios mean more risk but allow higher spending. Recommended to stay at or below 50%."
-                        />
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-900">Optimal Annual Expenses:</span>
-                            <span className="text-sm font-semibold text-blue-600">${formatNumber(optimalExpenses)}</span>
-                          </div>
-                          <p className="text-xs text-gray-600 mt-1">
-                            This is the maximum amount you can safely spend each year while keeping your LTV ratio under {inputs.maxLTV}%
-                          </p>
+                      <InputField 
+                        label="Max LTV Ratio (%)"
+                        value={inputs.maxLTV}
+                        onChange={handleInputChange('maxLTV')}
+                        initialValue={inputs.maxLTV}
+                        tooltip="Maximum Loan-to-Value ratio you're comfortable with. Higher ratios mean more risk but allow higher spending. Recommended to stay at or below 50%."
+                      />
+                      <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-900">Optimal Annual Expenses:</span>
+                          <span className="text-sm font-semibold text-blue-600">${formatNumber(optimalExpenses)}</span>
                         </div>
+                        <p className="text-xs text-gray-600 mt-1">
+                          This is the maximum amount you can safely spend each year while keeping your LTV ratio under {inputs.maxLTV}%
+                        </p>
                       </div>
                     </div>
                   )}
