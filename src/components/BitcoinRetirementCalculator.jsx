@@ -260,38 +260,93 @@ const ColumnHeader = ({ label, tooltip, className }) => {
 };
 
 // Growth Rates Display Component
-const GrowthRatesDisplay = ({ growthRates }) => (
-  <div className="mb-6">
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="text-lg font-semibold text-gray-900">Growth Rate Schedule</h3>
-      <div className="text-sm text-gray-500">
-        Initial: {growthRates[0]?.rate}% → Terminal: {growthRates[9]?.rate}%
-      </div>
-    </div>
-    <div className="grid grid-cols-10 gap-1 bg-white p-4 rounded-xl shadow-sm">
-      {growthRates.map(({ year, rate }, index) => (
-        <div 
-          key={year}
-          className={`relative p-3 rounded-lg ${
-            index === 9 ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'
-          }`}
-        >
-          <div className="text-xs font-medium text-gray-500 mb-1">Year {year}</div>
-          <div className={`text-lg font-semibold ${
-            index === 9 ? 'text-blue-600' : 'text-gray-900'
-          }`}>
-            {rate}%
-          </div>
-          {index < 9 && (
-            <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 text-gray-300">
-              →
-            </div>
-          )}
+const GrowthRatesDisplay = ({ growthRates }) => {
+  const [showAllYears, setShowAllYears] = useState(false);
+  const scrollRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia('(max-width: 640px)').matches);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const displayedRates = useMemo(() => {
+    if (!isMobile || showAllYears) return growthRates;
+    return growthRates.slice(0, 10); // Only show first 10 years by default on mobile
+  }, [growthRates, showAllYears, isMobile]);
+
+  return (
+    <div className="mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+        <h3 className="text-lg font-semibold text-gray-900">Growth Rate Schedule</h3>
+        <div className="text-sm text-gray-500">
+          Initial: {growthRates[0]?.rate}% → Terminal: {growthRates[9]?.rate}%
         </div>
-      ))}
+      </div>
+      
+      <div className="relative">
+        <div 
+          ref={scrollRef}
+          className="overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar"
+        >
+          <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 bg-white p-4 rounded-xl shadow-sm min-w-[600px] sm:min-w-0">
+            {displayedRates.map(({ year, rate }, index) => (
+              <div 
+                key={year}
+                className={`relative p-3 rounded-lg ${
+                  index === 9 ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'
+                }`}
+              >
+                <div className="text-xs font-medium text-gray-500 mb-1">Year {year}</div>
+                <div className={`text-base sm:text-lg font-semibold ${
+                  index === 9 ? 'text-blue-600' : 'text-gray-900'
+                }`}>
+                  {rate}%
+                </div>
+                {index < 9 && (
+                  <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 text-gray-300">
+                    →
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Scroll indicators - only show on mobile */}
+        {isMobile && (
+          <>
+            <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-white to-transparent pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+          </>
+        )}
+      </div>
+
+      {/* Show/Hide years button - only show on mobile */}
+      {isMobile && growthRates.length > 10 && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowAllYears(!showAllYears)}
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            {showAllYears ? 'Show Less Years' : 'Show All 20 Years'}
+          </button>
+        </div>
+      )}
+
+      {/* Mobile scroll hint - only show on mobile */}
+      {isMobile && (
+        <div className="mt-2 text-xs text-gray-400 text-center">
+          Swipe to see more years →
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 // Results Table Component
 const ResultsTable = ({ results }) => {
