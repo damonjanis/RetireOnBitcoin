@@ -166,12 +166,15 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
     }
   }, [value, isLoading]);
 
-  const handleFocus = () => {
+  const handleFocus = (e) => {
     if (!disabled && !isLoading) {
       setIsEditing(true);
-      if (type === "number") {
-        setInputValue(value.toString());
-      }
+      // Use setTimeout to ensure the selection happens after the value is set
+      setTimeout(() => {
+        if (e.target) {
+          e.target.select();
+        }
+      }, 0);
     }
   };
 
@@ -554,7 +557,7 @@ const TechnicalDetails = ({ inputs, results }) => {
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between text-left text-gray-900 hover:text-gray-600 transition-colors bg-gray-100"
       >
-        <span className="text-lg font-medium">Technical Details</span>
+        <span className="text-lg font-medium">How It Works</span>
         <svg
           className={`w-6 h-6 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}
           fill="none"
@@ -568,7 +571,7 @@ const TechnicalDetails = ({ inputs, results }) => {
       {isExpanded && (
         <div className="mt-4 space-y-6 text-sm text-gray-800">
           <section>
-            <h4 className="font-semibold text-gray-900 mb-2">Bitcoin Price Growth Model</h4>
+            <h4 className="font-semibold text-gray-900 mb-2">Growth Model</h4>
             <p className="mb-2">The calculator uses a scaled growth model where Bitcoin's growth rate decreases over time:</p>
             <ul className="list-disc pl-5 space-y-2">
               <li>Starts at {inputs.initialGrowthRate}% initial growth rate</li>
