@@ -101,6 +101,8 @@ const formatYAxisTick = (value) => {
 const InputField = ({ label, value, onChange, type = "number", disabled = false, initialValue, tooltip }) => {
   const [inputValue, setInputValue] = useState(formatNumber(initialValue || value || 0));
   const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const tooltipRef = useRef(null);
 
   useEffect(() => {
     setInputValue(formatNumber(value || 0));
@@ -116,29 +118,29 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
     }
   };
 
+  const handleMouseEnter = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltipPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setShowTooltip(true);
+  };
+
   return (
     <div className="relative mb-3 sm:mb-4 w-full">
       <div className="flex items-center gap-2 mb-1.5">
         <label className="block text-sm sm:text-base font-medium text-gray-900 truncate flex-grow">{label}</label>
         <div className="relative inline-block">
-          <button
-            type="button"
-            className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 touch-manipulation"
-            onClick={() => setShowTooltip(!showTooltip)}
-            aria-label="Show information"
+          <div
+            className="cursor-help"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={() => setShowTooltip(false)}
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-          </button>
-          {showTooltip && (
-            <div className="absolute z-10 w-64 sm:w-72 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 bottom-full -translate-y-2">
-              <div className="relative">
-                {tooltip}
-                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full w-2 h-2 bg-gray-900 rotate-45"></div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
       <input
@@ -150,6 +152,21 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
         disabled={disabled}
         className="w-full px-3 py-2 text-base sm:text-lg border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 text-gray-900"
       />
+      {showTooltip && (
+        <div
+          ref={tooltipRef}
+          style={{
+            position: 'fixed',
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+            transform: 'translate(-50%, -100%)',
+          }}
+          className="px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-[100] w-48 sm:w-56 normal-case"
+        >
+          {tooltip}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-t-gray-900" />
+        </div>
+      )}
     </div>
   );
 };
