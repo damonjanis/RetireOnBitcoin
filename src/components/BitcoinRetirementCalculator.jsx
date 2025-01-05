@@ -155,7 +155,7 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
 };
 
 // Column header with tooltip component
-const ColumnHeader = ({ label, tooltip }) => {
+const ColumnHeader = ({ label, tooltip, className }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const tooltipRef = useRef(null);
@@ -170,7 +170,7 @@ const ColumnHeader = ({ label, tooltip }) => {
   };
   
   return (
-    <th className="text-right p-2 text-xs font-medium text-gray-700 uppercase tracking-wider">
+    <th className={`text-right p-2 text-xs font-medium text-gray-700 uppercase tracking-wider ${className}`}>
       <div className="flex items-center justify-end gap-1">
         {label}
         <div className="relative inline-block">
@@ -239,67 +239,114 @@ const GrowthRatesDisplay = ({ growthRates }) => (
 );
 
 // Results Table Component
-const ResultsTable = ({ results }) => (
-  <div className="overflow-x-auto rounded-lg shadow">
-    <div className="inline-block min-w-full align-middle">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead>
-          <tr className="bg-gray-50">
-            <ColumnHeader 
-              label="Year" 
-              tooltip="The year in your retirement timeline, starting from 0 (today)"
-            />
-            <ColumnHeader 
-              label="Growth Rate" 
-              tooltip="Bitcoin's expected price growth rate for this year. Transitions from initial to terminal rate over 10 years"
-            />
-            <ColumnHeader 
-              label="Bitcoin Price" 
-              tooltip="Projected Bitcoin price based on the growth rate. This determines your portfolio value"
-            />
-            <ColumnHeader 
-              label="Portfolio Value" 
-              tooltip="Total value of your Bitcoin holdings (Bitcoin Amount × Bitcoin Price)"
-            />
-            <ColumnHeader 
-              label="Total Debt" 
-              tooltip="Cumulative borrowed amount plus interest. This is what you owe from borrowing for living expenses"
-            />
-            <ColumnHeader 
-              label="Net Worth" 
-              tooltip="Portfolio Value minus Total Debt. This is your actual wealth after accounting for loans"
-            />
-            <ColumnHeader 
-              label="LTV Ratio" 
-              tooltip="Loan-to-Value ratio (Total Debt ÷ Portfolio Value). Should stay under 50% for safety"
-            />
-            <ColumnHeader 
-              label="Annual Expenses" 
-              tooltip="Living expenses for this year, increasing yearly with inflation"
-            />
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {results.map((row, index) => (
-            <tr 
-              key={row.year} 
-              className={`hover:bg-gray-50 text-gray-900 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-            >
-              <td className="whitespace-nowrap py-2 px-3 text-sm font-medium">{row.year}</td>
-              <td className="whitespace-nowrap py-2 px-3 text-sm text-right">{row.growthRate}%</td>
-              <td className="whitespace-nowrap py-2 px-3 text-sm text-right">${formatNumber(row.bitcoinPrice)}</td>
-              <td className="whitespace-nowrap py-2 px-3 text-sm text-right font-medium text-blue-600">${formatNumber(row.portfolioValue)}</td>
-              <td className="whitespace-nowrap py-2 px-3 text-sm text-right font-medium text-red-600">${formatNumber(row.totalDebt)}</td>
-              <td className="whitespace-nowrap py-2 px-3 text-sm text-right font-medium text-green-600">${formatNumber(row.netWorth)}</td>
-              <td className="whitespace-nowrap py-2 px-3 text-sm text-right">{row.ltvRatio}%</td>
-              <td className="whitespace-nowrap py-2 px-3 text-sm text-right">${formatNumber(row.annualExpenses)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+const ResultsTable = ({ results }) => {
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const scrollContainerRef = useRef(null);
+
+  const checkScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, []);
+
+  return (
+    <div className="relative mb-6">
+      {/* Scroll Indicators */}
+      {canScrollLeft && (
+        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
+      )}
+      {canScrollRight && (
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
+      )}
+      
+      {/* Mobile Scroll Hint */}
+      <div className="md:hidden text-sm text-gray-500 mb-2 text-center">
+        Swipe horizontally to view more data
+      </div>
+
+      <div 
+        ref={scrollContainerRef}
+        className="overflow-x-auto rounded-lg shadow overscroll-x-contain"
+        onScroll={checkScroll}
+      >
+        <div className="inline-block min-w-full align-middle">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr className="bg-gray-50">
+                <ColumnHeader 
+                  label="Year" 
+                  tooltip="The year in your retirement timeline, starting from 0 (today)"
+                  className="text-xs sm:text-[11px] md:text-sm"
+                />
+                <ColumnHeader 
+                  label="Growth" 
+                  tooltip="Bitcoin's expected price growth rate for this year. Transitions from initial to terminal rate over 10 years"
+                  className="text-xs sm:text-[11px] md:text-sm"
+                />
+                <ColumnHeader 
+                  label="BTC Price" 
+                  tooltip="Projected Bitcoin price based on the growth rate. This determines your portfolio value"
+                  className="text-xs sm:text-[11px] md:text-sm"
+                />
+                <ColumnHeader 
+                  label="Portfolio" 
+                  tooltip="Total value of your Bitcoin holdings (Bitcoin Amount × Bitcoin Price)"
+                  className="text-xs sm:text-[11px] md:text-sm"
+                />
+                <ColumnHeader 
+                  label="Debt" 
+                  tooltip="Cumulative borrowed amount plus interest. This is what you owe from borrowing for living expenses"
+                  className="text-xs sm:text-[11px] md:text-sm"
+                />
+                <ColumnHeader 
+                  label="Net Worth" 
+                  tooltip="Portfolio Value minus Total Debt. This is your actual wealth after accounting for loans"
+                  className="text-xs sm:text-[11px] md:text-sm"
+                />
+                <ColumnHeader 
+                  label="LTV" 
+                  tooltip="Loan-to-Value ratio (Total Debt ÷ Portfolio Value). Should stay under 50% for safety"
+                  className="text-xs sm:text-[11px] md:text-sm"
+                />
+                <ColumnHeader 
+                  label="Expenses" 
+                  tooltip="Living expenses for this year, increasing yearly with inflation"
+                  className="text-xs sm:text-[11px] md:text-sm"
+                />
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {results.map((row, index) => (
+                <tr 
+                  key={row.year} 
+                  className={`hover:bg-gray-50 text-gray-900 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                >
+                  <td className="sticky left-0 bg-inherit whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm font-medium border-r border-gray-200">{row.year}</td>
+                  <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right">{row.growthRate}%</td>
+                  <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right">${formatNumber(row.bitcoinPrice)}</td>
+                  <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right font-medium text-blue-600">${formatNumber(row.portfolioValue)}</td>
+                  <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right font-medium text-red-600">${formatNumber(row.totalDebt)}</td>
+                  <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right font-medium text-green-600">${formatNumber(row.netWorth)}</td>
+                  <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right">{row.ltvRatio}%</td>
+                  <td className="whitespace-nowrap py-1.5 px-2 sm:py-2 sm:px-2 md:py-2 md:px-3 text-xs sm:text-[11px] md:text-sm text-right">${formatNumber(row.annualExpenses)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Main Component
 const BitcoinRetirementCalculator = () => {
