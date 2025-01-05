@@ -21,40 +21,31 @@ const calculateProjections = (inputs) => {
   let totalBorrowed = 0;
   let totalInterest = 0;
   let inflatedExpenses = inputs.annualExpenses;
-
-  // Add initial "Today" snapshot
-  projections.push({
-    year: 'Today',
-    growthRate: 0,
-    bitcoinPrice: inputs.bitcoinPrice,
-    portfolioValue: inputs.bitcoinPrice * inputs.bitcoinAmount,
-    totalBorrowed: 0,
-    totalInterest: 0,
-    totalDebt: 0,
-    netWorth: inputs.bitcoinPrice * inputs.bitcoinAmount,
-    ltvRatio: 0,
-    annualExpenses: 0
-  });
+  let bitcoinValue = inputs.bitcoinPrice;
 
   for (let i = 0; i < inputs.years; i++) {
-    const year = i + 1; // Convert to 1-based numbering
-    const growthRate = inputs.growthRates.find(g => g.year === year)?.rate || 
-      inputs.growthRates[inputs.growthRates.length - 1].rate;
-
-    const bitcoinValue = projections[projections.length - 1].bitcoinPrice * (1 + growthRate/100);
-    const portfolioValue = bitcoinValue * inputs.bitcoinAmount;
+    const year = i + 1;
     
+    // First calculate debt at start of year
     totalBorrowed += inflatedExpenses;
     totalInterest += totalBorrowed * (inputs.interestRate/100);
     
+    const portfolioValue = bitcoinValue * inputs.bitcoinAmount;
     const totalDebt = totalBorrowed + totalInterest;
     const netWorth = portfolioValue - totalDebt;
     const ltvRatio = (totalDebt / portfolioValue) * 100;
 
+    // Get growth rate for this year
+    const growthRate = inputs.growthRates.find(g => g.year === year)?.rate || 
+      inputs.growthRates[inputs.growthRates.length - 1].rate;
+
+    // Apply growth for next year's starting price
+    const nextBitcoinValue = bitcoinValue * (1 + growthRate/100);
+
     projections.push({
       year,
       growthRate,
-      bitcoinPrice: Math.round(bitcoinValue),
+      bitcoinPrice: Math.round(i === 0 ? bitcoinValue : nextBitcoinValue),
       portfolioValue: Math.round(portfolioValue),
       totalBorrowed: Math.round(totalBorrowed),
       totalInterest: Math.round(totalInterest),
@@ -63,6 +54,9 @@ const calculateProjections = (inputs) => {
       ltvRatio: Math.round(ltvRatio * 100) / 100,
       annualExpenses: Math.round(inflatedExpenses)
     });
+
+    // Update bitcoinValue for next iteration
+    bitcoinValue = nextBitcoinValue;
 
     // Increase expenses by inflation rate for next year
     inflatedExpenses *= (1 + inputs.inflationRate/100);
@@ -406,17 +400,17 @@ const ResultsTable = ({ results }) => {
               <tr className="bg-gray-50">
                 <ColumnHeader 
                   label="Year" 
-                  tooltip="Shows your current position (Today) followed by each year of implementing the strategy (Year 1 onwards)"
+                  tooltip="Each year of the strategy, starting from Year 1. Loans are taken at the start of each year, before Bitcoin price growth"
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
                 <ColumnHeader 
                   label="Growth" 
-                  tooltip="Bitcoin's expected price growth rate for this year. Transitions from initial to terminal rate over 10 years"
+                  tooltip="Bitcoin's expected price growth rate for this year, applied after the loan is taken"
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
                 <ColumnHeader 
                   label="BTC Price" 
-                  tooltip="Projected Bitcoin price based on the growth rate. This determines your portfolio value"
+                  tooltip="Bitcoin price used for calculations. Year 1 shows starting price, subsequent years show price after previous year's growth"
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
                 <ColumnHeader 
@@ -436,7 +430,7 @@ const ResultsTable = ({ results }) => {
                 />
                 <ColumnHeader 
                   label="LTV" 
-                  tooltip="Loan-to-Value ratio (Total Debt ÷ Portfolio Value). Should stay under 50% for safety"
+                  tooltip="Loan-to-Value ratio calculated at the start of each year before Bitcoin appreciation. This represents the highest LTV for the year"
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
                 <ColumnHeader 
