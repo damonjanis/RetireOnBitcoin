@@ -480,7 +480,7 @@ const ResultsTable = ({ results }) => {
 };
 
 // Technical Details Component
-const TechnicalDetails = () => {
+const TechnicalDetails = ({ inputs, results }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -506,9 +506,9 @@ const TechnicalDetails = () => {
             <h4 className="font-semibold text-gray-900 mb-2">Bitcoin Price Growth Model</h4>
             <p className="mb-2">The calculator uses a scaled growth model where Bitcoin's growth rate decreases over time:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li>Starts at the specified initial growth rate (default 60%)</li>
-              <li>Linearly decreases over 9 years to reach the terminal rate in year 10</li>
-              <li>Maintains the terminal rate (default 15%) for all subsequent years</li>
+              <li>Starts at {inputs.initialGrowthRate}% initial growth rate</li>
+              <li>Linearly decreases over 9 years to reach the {inputs.terminalGrowthRate}% terminal rate in year 10</li>
+              <li>Maintains the {inputs.terminalGrowthRate}% terminal rate for all subsequent years</li>
               <li>Formula: rate = max(terminalRate, initialRate - (decay * (year - 1)))</li>
               <li>Where decay = (initialRate - terminalRate) / 9</li>
             </ul>
@@ -518,9 +518,9 @@ const TechnicalDetails = () => {
             <h4 className="font-semibold text-gray-900 mb-2">Debt and Interest Calculations</h4>
             <p className="mb-2">For each year, the calculator:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li>Calculates interest on existing debt: totalInterest += totalBorrowed * (interestRate/100)</li>
+              <li>Calculates interest on existing debt: totalInterest += totalBorrowed * ({inputs.interestRate}%)</li>
               <li>Adds new borrowing for annual expenses: totalBorrowed += inflatedExpenses</li>
-              <li>Updates expenses for inflation: inflatedExpenses *= (1 + inflationRate/100)</li>
+              <li>Updates expenses for inflation: inflatedExpenses *= (1 + {inputs.inflationRate}% inflation)</li>
               <li>Calculates total debt: totalDebt = totalBorrowed + totalInterest</li>
             </ul>
           </section>
@@ -541,7 +541,7 @@ const TechnicalDetails = () => {
             <ul className="list-disc pl-5 space-y-2">
               <li>Uses binary search to find the maximum safe annual expenses</li>
               <li>Tests different expense levels between $0 and portfolio value</li>
-              <li>For each test, runs a full projection to check if LTV stays under the specified maximum</li>
+              <li>For each test, runs a full projection to check if LTV stays under the {inputs.maxLTV}% maximum</li>
               <li>Continues narrowing the range until finding the optimal value within $100 precision</li>
             </ul>
           </section>
@@ -818,7 +818,7 @@ const BitcoinRetirementCalculator = () => {
             <ResultsTable results={results} />
           </div>
 
-          <TechnicalDetails />
+          <TechnicalDetails inputs={inputs} results={results} />
         </div>
       </div>
     </div>
