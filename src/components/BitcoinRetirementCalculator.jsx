@@ -427,7 +427,7 @@ const ResultsTable = ({ results }) => {
                 />
                 <ColumnHeader 
                   label="Portfolio" 
-                  tooltip="Total value of your Bitcoin holdings (Bitcoin Amount × Bitcoin Price)"
+                  tooltip="Total value of your Bitcoin holdings (Bitcoin Amount × Bitcoin Price) at end of year"
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
                 <ColumnHeader 
@@ -529,9 +529,9 @@ const TechnicalDetails = () => {
             <h4 className="font-semibold text-gray-900 mb-2">Portfolio and LTV Calculations</h4>
             <p className="mb-2">For each year, the calculator computes:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li>Portfolio value: bitcoinPrice * bitcoinAmount</li>
+              <li>End-of-year portfolio value: (bitcoinPrice * (1 + growthRate/100)) * bitcoinAmount</li>
               <li>Net worth: portfolioValue - totalDebt</li>
-              <li>LTV ratio: (totalDebt / portfolioValue) * 100</li>
+              <li>LTV ratio: (totalDebt / startYearPortfolioValue) * 100, where startYearPortfolioValue uses beginning-of-year Bitcoin price</li>
             </ul>
           </section>
 
@@ -761,7 +761,12 @@ const BitcoinRetirementCalculator = () => {
                     tickMargin={8}
                   />
                   <Tooltip 
-                    formatter={(value) => `$${formatNumber(value)}`}
+                    formatter={(value, name) => {
+                      if (name === "Portfolio Value") {
+                        return [`$${formatNumber(value)}`, name];
+                      }
+                      return `$${formatNumber(value)}`;
+                    }}
                     contentStyle={{
                       backgroundColor: 'rgba(255, 255, 255, 0.95)',
                       border: '1px solid #e5e7eb',
