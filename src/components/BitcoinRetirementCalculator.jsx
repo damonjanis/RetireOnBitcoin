@@ -63,15 +63,15 @@ const findOptimalAnnualExpenses = (inputs) => {
   let low = 0;
   let high = inputs.bitcoinPrice * inputs.bitcoinAmount;
   let optimalExpenses = 0;
-  const TARGET_LTV = 50;
+  const maxLTV = inputs.maxLTV || 50; // Use custom maxLTV or default to 50
   const PRECISION = 100;
 
   while (high - low > PRECISION) {
     const mid = (low + high) / 2;
     const projections = calculateProjections({ ...inputs, annualExpenses: mid });
-    const maxLTV = Math.max(...projections.map(p => p.ltvRatio));
+    const maxLTVInProjections = Math.max(...projections.map(p => p.ltvRatio));
 
-    if (maxLTV <= TARGET_LTV) {
+    if (maxLTVInProjections <= maxLTV) {
       optimalExpenses = mid;
       low = mid;
     } else {
@@ -468,7 +468,8 @@ const BitcoinRetirementCalculator = () => {
     years: 20,
     initialGrowthRate: 60,
     terminalGrowthRate: 15,
-    inflationRate: 3
+    inflationRate: 3,
+    maxLTV: 50 // Add maxLTV to inputs
   });
 
   const [results, setResults] = useState([]);
@@ -538,80 +539,112 @@ const BitcoinRetirementCalculator = () => {
               initialValue={inputs.bitcoinPrice}
               tooltip="Current or expected bitcoin price in USD. This is your starting point for future price projections."
             />
-            <div className="space-y-3">
-              <InputField 
-                label="Annual Expenses (USD)"
-                value={useOptimalExpenses ? optimalExpenses : inputs.annualExpenses}
-                onChange={handleInputChange('annualExpenses')}
-                disabled={useOptimalExpenses}
-                initialValue={inputs.annualExpenses}
-                tooltip="How much you need each year for living expenses. Think rent/mortgage, food, utilities, etc."
-              />
-              <div className="bg-gray-50 rounded-lg p-3">
-                <label className="flex items-center gap-3 cursor-pointer touch-manipulation">
-                  <input
-                    type="checkbox"
-                    checked={useOptimalExpenses}
-                    onChange={(e) => setUseOptimalExpenses(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-gray-900">Calculate optimal annual expenses (Keep LTV ratio under 50%)</span>
-                </label>
-                
-                {useOptimalExpenses && (
-                  <div className="bg-blue-50 p-3 rounded-lg mt-3">
-                    <p className="text-sm font-medium text-blue-900">
-                      Optimal Annual Expenses: ${formatNumber(optimalExpenses)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
             <InputField 
               label="Interest Rate (%)"
               value={inputs.interestRate}
               onChange={handleInputChange('interestRate')}
               initialValue={inputs.interestRate}
-              tooltip="The rate you'll pay on borrowed money. Similar to a home equity loan rate."
+              tooltip="Annual interest rate on your bitcoin-backed loans. Currently ranges from 5-10% depending on the provider."
             />
             <InputField 
               label="Years"
               value={inputs.years}
               onChange={handleInputChange('years')}
               initialValue={inputs.years}
-              tooltip="How many years you want to plan for. Longer timeframes give a better picture of long-term sustainability."
+              tooltip="Number of years to project into the future"
             />
             <InputField 
-              label="Inflation Rate (%)"
-              value={inputs.inflationRate}
-              onChange={handleInputChange('inflationRate')}
-              initialValue={inputs.inflationRate}
-              tooltip="Expected annual increase in living costs. Historically averages around 2-3% in the US."
+              label="Initial Growth Rate (%)"
+              value={inputs.initialGrowthRate}
+              onChange={handleInputChange('initialGrowthRate')}
+              initialValue={inputs.initialGrowthRate}
+              tooltip="Expected annual growth rate for the first year. This will gradually decrease to the terminal rate."
+            />
+            <InputField 
+              label="Terminal Growth Rate (%)"
+              value={inputs.terminalGrowthRate}
+              onChange={handleInputChange('terminalGrowthRate')}
+              initialValue={inputs.terminalGrowthRate}
+              tooltip="Long-term sustainable growth rate that Bitcoin will stabilize at."
             />
           </div>
 
-          <div className="bg-gray-50 rounded-lg mb-6 p-4 md:p-6">
-            <h3 className="text-lg font-medium mb-4 text-gray-900 text-center">Growth Rate Settings</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <InputField 
-                label="Initial Growth Rate (%)"
-                value={inputs.initialGrowthRate}
-                onChange={handleInputChange('initialGrowthRate')}
-                initialValue={inputs.initialGrowthRate}
-                tooltip="Expected annual bitcoin price growth rate in early years, higher due to adoption phase. Gradually decreases over 10 years until reaching the terminal rate."
-              />
-              <InputField 
-                label="Terminal Growth Rate (%)"
-                value={inputs.terminalGrowthRate}
-                onChange={handleInputChange('terminalGrowthRate')}
-                initialValue={inputs.terminalGrowthRate}
-                tooltip="Long-term growth rate used after year 10. Represents mature market growth."
-              />
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Annual Expenses</h3>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="flex items-center gap-3 cursor-pointer touch-manipulation">
+                    <input
+                      type="radio"
+                      checked={!useOptimalExpenses}
+                      onChange={() => setUseOptimalExpenses(false)}
+                      className="w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                      name="expensesMode"
+                    />
+                    <div className="flex-grow">
+                      <span className="text-sm font-medium text-gray-900">Manual Entry</span>
+                      <p className="text-xs text-gray-500 mt-1">Enter your desired annual expenses manually</p>
+                    </div>
+                  </label>
+                  {!useOptimalExpenses && (
+                    <div className="mt-3 ml-7">
+                      <InputField 
+                        label="Annual Expenses (USD)"
+                        value={inputs.annualExpenses}
+                        onChange={handleInputChange('annualExpenses')}
+                        initialValue={inputs.annualExpenses}
+                        tooltip="How much you need each year for living expenses. Think rent/mortgage, food, utilities, etc."
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <label className="flex items-center gap-3 cursor-pointer touch-manipulation">
+                    <input
+                      type="radio"
+                      checked={useOptimalExpenses}
+                      onChange={() => setUseOptimalExpenses(true)}
+                      className="w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                      name="expensesMode"
+                    />
+                    <div className="flex-grow">
+                      <span className="text-sm font-medium text-gray-900">Calculate Optimal</span>
+                      <p className="text-xs text-gray-500 mt-1">Find the maximum safe spending level based on your max LTV ratio</p>
+                    </div>
+                  </label>
+                  {useOptimalExpenses && (
+                    <div className="mt-3 ml-7">
+                      <div className="space-y-3">
+                        <InputField 
+                          label="Max LTV Ratio (%)"
+                          value={inputs.maxLTV}
+                          onChange={handleInputChange('maxLTV')}
+                          initialValue={inputs.maxLTV}
+                          tooltip="Maximum Loan-to-Value ratio you're comfortable with. Higher ratios mean more risk but allow higher spending."
+                        />
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-900">Optimal Annual Expenses:</span>
+                            <span className="text-sm font-semibold text-blue-600">${formatNumber(optimalExpenses)}</span>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">
+                            This is the maximum amount you can safely spend each year while keeping your LTV ratio under {inputs.maxLTV}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
-          <GrowthRatesDisplay growthRates={growthRates} />
-          
+          <div className="bg-gray-50 rounded-lg mb-6 p-4 md:p-6">
+            <GrowthRatesDisplay growthRates={growthRates} />
+          </div>
+
           <div className="mb-6 bg-white rounded-lg shadow p-4 md:p-6">
             <h3 className="text-lg font-medium mb-4 text-gray-900 text-center">Wealth Projection Chart</h3>
             <div className="h-[50vh] min-h-[300px] max-h-[500px]">
