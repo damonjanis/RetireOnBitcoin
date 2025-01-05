@@ -240,59 +240,64 @@ const GrowthRatesDisplay = ({ growthRates }) => (
 
 // Results Table Component
 const ResultsTable = ({ results }) => (
-  <div className="overflow-x-auto">
-    <table className="w-full min-w-full divide-y divide-gray-200">
-      <thead className="bg-gray-50">
-        <tr>
-          <ColumnHeader 
-            label="Year" 
-            tooltip="The year in your retirement timeline, starting from 0 (today)"
-          />
-          <ColumnHeader 
-            label="Growth Rate" 
-            tooltip="Bitcoin's expected price growth rate for this year. Transitions from initial to terminal rate over 10 years"
-          />
-          <ColumnHeader 
-            label="Bitcoin Price" 
-            tooltip="Projected Bitcoin price based on the growth rate. This determines your portfolio value"
-          />
-          <ColumnHeader 
-            label="Portfolio Value" 
-            tooltip="Total value of your Bitcoin holdings (Bitcoin Amount × Bitcoin Price)"
-          />
-          <ColumnHeader 
-            label="Total Debt" 
-            tooltip="Cumulative borrowed amount plus interest. This is what you owe from borrowing for living expenses"
-          />
-          <ColumnHeader 
-            label="Net Worth" 
-            tooltip="Portfolio Value minus Total Debt. This is your actual wealth after accounting for loans"
-          />
-          <ColumnHeader 
-            label="LTV Ratio" 
-            tooltip="Loan-to-Value ratio (Total Debt ÷ Portfolio Value). Should stay under 50% for safety"
-          />
-          <ColumnHeader 
-            label="Annual Expenses" 
-            tooltip="Living expenses for this year, increasing yearly with inflation"
-          />
-        </tr>
-      </thead>
-      <tbody className="bg-white divide-y divide-gray-200">
-        {results.map((row) => (
-          <tr key={row.year} className="hover:bg-gray-50 text-gray-900">
-            <td className="p-2">{row.year}</td>
-            <td className="text-right p-2">{row.growthRate}%</td>
-            <td className="text-right p-2">${formatNumber(row.bitcoinPrice)}</td>
-            <td className="text-right p-2">${formatNumber(row.portfolioValue)}</td>
-            <td className="text-right p-2">${formatNumber(row.totalDebt)}</td>
-            <td className="text-right p-2">${formatNumber(row.netWorth)}</td>
-            <td className="text-right p-2">{row.ltvRatio}%</td>
-            <td className="text-right p-2">${formatNumber(row.annualExpenses)}</td>
+  <div className="overflow-x-auto rounded-lg shadow">
+    <div className="inline-block min-w-full align-middle">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead>
+          <tr className="bg-gray-50">
+            <ColumnHeader 
+              label="Year" 
+              tooltip="The year in your retirement timeline, starting from 0 (today)"
+            />
+            <ColumnHeader 
+              label="Growth Rate" 
+              tooltip="Bitcoin's expected price growth rate for this year. Transitions from initial to terminal rate over 10 years"
+            />
+            <ColumnHeader 
+              label="Bitcoin Price" 
+              tooltip="Projected Bitcoin price based on the growth rate. This determines your portfolio value"
+            />
+            <ColumnHeader 
+              label="Portfolio Value" 
+              tooltip="Total value of your Bitcoin holdings (Bitcoin Amount × Bitcoin Price)"
+            />
+            <ColumnHeader 
+              label="Total Debt" 
+              tooltip="Cumulative borrowed amount plus interest. This is what you owe from borrowing for living expenses"
+            />
+            <ColumnHeader 
+              label="Net Worth" 
+              tooltip="Portfolio Value minus Total Debt. This is your actual wealth after accounting for loans"
+            />
+            <ColumnHeader 
+              label="LTV Ratio" 
+              tooltip="Loan-to-Value ratio (Total Debt ÷ Portfolio Value). Should stay under 50% for safety"
+            />
+            <ColumnHeader 
+              label="Annual Expenses" 
+              tooltip="Living expenses for this year, increasing yearly with inflation"
+            />
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {results.map((row, index) => (
+            <tr 
+              key={row.year} 
+              className={`hover:bg-gray-50 text-gray-900 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+            >
+              <td className="whitespace-nowrap py-2 px-3 text-sm font-medium">{row.year}</td>
+              <td className="whitespace-nowrap py-2 px-3 text-sm text-right">{row.growthRate}%</td>
+              <td className="whitespace-nowrap py-2 px-3 text-sm text-right">${formatNumber(row.bitcoinPrice)}</td>
+              <td className="whitespace-nowrap py-2 px-3 text-sm text-right font-medium text-blue-600">${formatNumber(row.portfolioValue)}</td>
+              <td className="whitespace-nowrap py-2 px-3 text-sm text-right font-medium text-red-600">${formatNumber(row.totalDebt)}</td>
+              <td className="whitespace-nowrap py-2 px-3 text-sm text-right font-medium text-green-600">${formatNumber(row.netWorth)}</td>
+              <td className="whitespace-nowrap py-2 px-3 text-sm text-right">{row.ltvRatio}%</td>
+              <td className="whitespace-nowrap py-2 px-3 text-sm text-right">${formatNumber(row.annualExpenses)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   </div>
 );
 
@@ -450,18 +455,66 @@ const BitcoinRetirementCalculator = () => {
 
           <GrowthRatesDisplay growthRates={growthRates} />
           
-          <div className="mb-6">
-            <div className="h-96">
+          <div className="mb-6 bg-white rounded-lg shadow p-4 md:p-6">
+            <h3 className="text-lg font-medium mb-4 text-gray-900 text-center">Wealth Projection Chart</h3>
+            <div className="h-[50vh] min-h-[300px] max-h-[500px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={results}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis tickFormatter={formatYAxisTick} />
-                  <Tooltip formatter={(value) => `$${formatNumber(value)}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="portfolioValue" name="Portfolio Value" stroke="#2563eb" />
-                  <Line type="monotone" dataKey="totalDebt" name="Total Debt" stroke="#dc2626" />
-                  <Line type="monotone" dataKey="netWorth" name="Net Worth" stroke="#16a34a" />
+                <LineChart data={results} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="year" 
+                    tick={{ fontSize: 12 }}
+                    tickMargin={8}
+                  />
+                  <YAxis 
+                    tickFormatter={formatYAxisTick} 
+                    tick={{ fontSize: 12 }}
+                    tickMargin={8}
+                  />
+                  <Tooltip 
+                    formatter={(value) => `$${formatNumber(value)}`}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.5rem',
+                      padding: '0.75rem'
+                    }}
+                  />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36}
+                    iconSize={16}
+                    wrapperStyle={{
+                      paddingTop: '0.5rem'
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="portfolioValue" 
+                    name="Portfolio Value" 
+                    stroke="#2563eb" 
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="totalDebt" 
+                    name="Total Debt" 
+                    stroke="#dc2626" 
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="netWorth" 
+                    name="Net Worth" 
+                    stroke="#16a34a" 
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 6 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
