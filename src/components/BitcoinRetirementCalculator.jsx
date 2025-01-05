@@ -101,7 +101,7 @@ const formatYAxisTick = (value) => {
 const InputField = ({ label, value, onChange, type = "number", disabled = false, initialValue, tooltip }) => {
   const [inputValue, setInputValue] = useState(formatNumber(initialValue || value || 0));
   const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0, align: 'center' });
   const tooltipRef = useRef(null);
 
   useEffect(() => {
@@ -120,10 +120,23 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
 
   const handleMouseEnter = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setTooltipPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10
-    });
+    const windowWidth = window.innerWidth;
+    const isMobile = windowWidth <= 640; // sm breakpoint
+    
+    // For mobile, check if we're too close to the right edge
+    if (isMobile && rect.right > windowWidth - 100) {
+      setTooltipPosition({
+        x: rect.left - 10,
+        y: rect.top + rect.height / 2,
+        align: 'right'
+      });
+    } else {
+      setTooltipPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10,
+        align: 'center'
+      });
+    }
     setShowTooltip(true);
   };
 
@@ -159,12 +172,18 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
             position: 'fixed',
             left: `${tooltipPosition.x}px`,
             top: `${tooltipPosition.y}px`,
-            transform: 'translate(-50%, -100%)',
+            transform: tooltipPosition.align === 'center' 
+              ? 'translate(-50%, -100%)' 
+              : 'translate(-100%, -50%)',
           }}
           className="px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-[100] w-48 sm:w-56 normal-case"
         >
           {tooltip}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-t-gray-900" />
+          {tooltipPosition.align === 'center' ? (
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-t-gray-900" />
+          ) : (
+            <div className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-l-gray-900" />
+          )}
         </div>
       )}
     </div>
@@ -174,15 +193,28 @@ const InputField = ({ label, value, onChange, type = "number", disabled = false,
 // Column header with tooltip component
 const ColumnHeader = ({ label, tooltip, className }) => {
   const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0, align: 'center' });
   const tooltipRef = useRef(null);
 
   const handleMouseEnter = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setTooltipPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10
-    });
+    const windowWidth = window.innerWidth;
+    const isMobile = windowWidth <= 640; // sm breakpoint
+    
+    // For mobile, check if we're too close to the right edge
+    if (isMobile && rect.right > windowWidth - 100) {
+      setTooltipPosition({
+        x: rect.left - 10,
+        y: rect.top + rect.height / 2,
+        align: 'right'
+      });
+    } else {
+      setTooltipPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10,
+        align: 'center'
+      });
+    }
     setShowTooltip(true);
   };
   
@@ -209,12 +241,18 @@ const ColumnHeader = ({ label, tooltip, className }) => {
             position: 'fixed',
             left: `${tooltipPosition.x}px`,
             top: `${tooltipPosition.y}px`,
-            transform: 'translate(-50%, -100%)',
+            transform: tooltipPosition.align === 'center' 
+              ? 'translate(-50%, -100%)' 
+              : 'translate(-100%, -50%)',
           }}
           className="px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-[100] w-48 normal-case"
         >
           {tooltip}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-t-gray-900" />
+          {tooltipPosition.align === 'center' ? (
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-t-gray-900" />
+          ) : (
+            <div className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 border-8 border-transparent border-l-gray-900" />
+          )}
         </div>
       )}
     </th>
