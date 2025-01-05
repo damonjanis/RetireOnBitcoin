@@ -720,8 +720,8 @@ const BitcoinRetirementCalculator = () => {
                       name="expensesMode"
                     />
                     <div className="flex-grow">
-                      <span className="text-sm font-medium text-gray-900">Manual Entry</span>
-                      <p className="text-xs text-gray-500 mt-1">Enter your desired annual expenses manually</p>
+                      <span className="text-sm font-medium text-gray-900">Custom Spending Level</span>
+                      <p className="text-xs text-gray-500 mt-1">Enter your target annual spending amount</p>
                     </div>
                   </label>
                   {!useOptimalExpenses && (
