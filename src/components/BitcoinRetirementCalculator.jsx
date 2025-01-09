@@ -344,7 +344,7 @@ const GrowthRatesDisplay = ({ growthRates }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
         <h3 className="text-lg font-semibold text-gray-900">Growth Rate Schedule</h3>
         <div className="text-sm text-gray-500">
-          Initial: {growthRates[0]?.rate}% → Terminal: {growthRates[9]?.rate}%
+          Initial: {growthRates[0]?.rate}% → Final: {growthRates[9]?.rate}%
         </div>
       </div>
       
@@ -554,10 +554,10 @@ const TechnicalDetails = ({ inputs, results }) => {
             <p className="mb-2">The calculator uses a scaled growth model where Bitcoin's growth rate decreases over time:</p>
             <ul className="list-disc pl-5 space-y-2">
               <li>Starts at {inputs.initialGrowthRate}% initial growth rate</li>
-              <li>Linearly decreases over 9 years to reach the {inputs.terminalGrowthRate}% terminal rate in year 10</li>
-              <li>Maintains the {inputs.terminalGrowthRate}% terminal rate for all subsequent years</li>
-              <li>Formula: rate = max(terminalRate, initialRate - (decay * (year - 1)))</li>
-              <li>Where decay = (initialRate - terminalRate) / 9</li>
+              <li>Linearly decreases over 9 years to reach the {inputs.terminalGrowthRate}% final rate in year 10</li>
+              <li>Maintains the {inputs.terminalGrowthRate}% final rate for all subsequent years</li>
+              <li>Formula: rate = max(finalRate, initialRate - (decay * (year - 1)))</li>
+              <li>Where decay = (initialRate - finalRate) / 9</li>
             </ul>
           </section>
 
@@ -703,55 +703,90 @@ const BitcoinRetirementCalculator = () => {
               Input your Bitcoin holdings and parameters below. The calculator models Bitcoin's price growth over time and can optimize your annual expenses to maintain a safe LTV ratio that you specify. View the results in the chart and table to see your potential wealth growth and sustainable spending level.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 mb-6">
-            <InputField 
-              label="Bitcoin Amount"
-              value={inputs.bitcoinAmount}
-              onChange={handleInputChange('bitcoinAmount')}
-              initialValue={inputs.bitcoinAmount}
-              tooltip="The number of bitcoins you own or plan to acquire. This is your core retirement asset."
-            />
-            <InputField 
-              label="Bitcoin Price (USD)"
-              value={inputs.bitcoinPrice}
-              onChange={handleInputChange('bitcoinPrice')}
-              initialValue={inputs.bitcoinPrice}
-              tooltip={`Current or expected bitcoin price in USD. This is your starting point for future price projections. ${priceError ? '\n' + priceError : ''}`}
-              isLoading={isFetchingPrice}
-              disabled={isFetchingPrice}
-            />
-            <InputField 
-              label="Interest Rate (%)"
-              value={inputs.interestRate}
-              onChange={handleInputChange('interestRate')}
-              initialValue={inputs.interestRate}
-              tooltip="Annual interest rate on your bitcoin-backed loans. Currently ranges from 5-10% depending on the provider."
-            />
-            <InputField 
-              label="Years"
-              value={inputs.years}
-              onChange={handleInputChange('years')}
-              initialValue={inputs.years}
-              tooltip="Number of years to project into the future"
-            />
-            <InputField 
-              label="Initial Growth Rate (%)"
-              value={inputs.initialGrowthRate}
-              onChange={handleInputChange('initialGrowthRate')}
-              initialValue={inputs.initialGrowthRate}
-              tooltip="Expected annual growth rate for the first year. This will gradually decrease to the terminal rate."
-            />
-            <InputField 
-              label="Terminal Growth Rate (%)"
-              value={inputs.terminalGrowthRate}
-              onChange={handleInputChange('terminalGrowthRate')}
-              initialValue={inputs.terminalGrowthRate}
-              tooltip="Long-term sustainable growth rate that Bitcoin will stabilize at."
-            />
+          {/* Asset Inputs */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Your Bitcoin</h3>
+            <p className="text-sm text-gray-600 mb-4">Enter your current or planned Bitcoin holdings</p>
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <InputField 
+                  label="Bitcoin Amount"
+                  value={inputs.bitcoinAmount}
+                  onChange={handleInputChange('bitcoinAmount')}
+                  initialValue={inputs.bitcoinAmount}
+                  tooltip="The number of bitcoins you own or plan to acquire. This is your core retirement asset."
+                />
+                <InputField 
+                  label="Starting Bitcoin Price (USD)"
+                  value={inputs.bitcoinPrice}
+                  onChange={handleInputChange('bitcoinPrice')}
+                  initialValue={inputs.bitcoinPrice}
+                  tooltip={`Current or expected bitcoin price in USD. This is your starting point for future price projections. ${priceError ? '\n' + priceError : ''}`}
+                  isLoading={isFetchingPrice}
+                  disabled={isFetchingPrice}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Annual Expenses</h3>
+          {/* Simulation Parameters */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Simulation Settings</h3>
+            <p className="text-sm text-gray-600 mb-4">Configure the time period and loan parameters</p>
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <InputField 
+                  label="Years to Simulate"
+                  value={inputs.years}
+                  onChange={handleInputChange('years')}
+                  initialValue={inputs.years}
+                  tooltip="Number of years to project into the future"
+                />
+                <InputField 
+                  label="Interest Rate (%)"
+                  value={inputs.interestRate}
+                  onChange={handleInputChange('interestRate')}
+                  initialValue={inputs.interestRate}
+                  tooltip="Annual interest rate on your bitcoin-backed loans. Usually ranges from 5-15% depending on the provider."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Growth & Economic Assumptions */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Growth & Economic Assumptions</h3>
+            <p className="text-sm text-gray-600 mb-4">Set your expectations for Bitcoin's growth and economic factors</p>
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <InputField 
+                  label="Initial Growth Rate (%)"
+                  value={inputs.initialGrowthRate}
+                  onChange={handleInputChange('initialGrowthRate')}
+                  initialValue={inputs.initialGrowthRate}
+                  tooltip="Expected annual growth rate for the first year. This will gradually decrease to the final rate."
+                />
+                <InputField 
+                  label="Final Growth Rate (%)"
+                  value={inputs.terminalGrowthRate}
+                  onChange={handleInputChange('terminalGrowthRate')}
+                  initialValue={inputs.terminalGrowthRate}
+                  tooltip="Expected long-term annual growth rate that Bitcoin's price will stabilize at"
+                />
+                <InputField 
+                  label="Inflation Rate (%)"
+                  value={inputs.inflationRate}
+                  onChange={handleInputChange('inflationRate')}
+                  initialValue={inputs.inflationRate}
+                  tooltip="Annual rate at which your expenses will increase due to inflation"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Annual Expenses</h3>
+            <p className="text-sm text-gray-600 mb-4">Choose how to set your annual expenses</p>
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="grid grid-cols-1 gap-4">
                 <div>
