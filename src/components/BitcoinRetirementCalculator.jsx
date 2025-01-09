@@ -2,6 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Utility functions
+/**
+ * Generates yearly growth rates that linearly decrease from initial to final rate over 9 years,
+ * then maintain the final rate thereafter
+ */
 const generateGrowthRates = (initialRate, terminalRate, years) => {
   const rates = [];
   const transitionYears = 9; // 9 steps to reach terminal rate at year 10
@@ -16,6 +20,9 @@ const generateGrowthRates = (initialRate, terminalRate, years) => {
   return rates;
 };
 
+/**
+ * Projects yearly portfolio value, debt, and LTV ratio based on input parameters
+ */
 const calculateProjections = (inputs) => {
   const projections = [];
   let totalBorrowed = 0;
@@ -72,6 +79,9 @@ const calculateProjections = (inputs) => {
   return projections;
 };
 
+/**
+ * Uses binary search to find maximum annual expenses that keep LTV ratio below maxLTV
+ */
 const findOptimalAnnualExpenses = (inputs) => {
   let low = 0;
   let high = inputs.bitcoinPrice * inputs.bitcoinAmount;
