@@ -419,7 +419,7 @@ const GrowthRatesDisplay = ({ growthRates }) => {
 };
 
 // Results Table Component
-const ResultsTable = ({ results }) => {
+const ResultsTable = ({ results, inputs }) => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const scrollContainerRef = useRef(null);
@@ -440,6 +440,7 @@ const ResultsTable = ({ results }) => {
 
   return (
     <div className="relative mb-6">
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">Year by Year Retirement Projections</h2>
       {/* Scroll Indicators */}
       {canScrollLeft && (
         <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
@@ -940,7 +941,7 @@ const BitcoinRetirementCalculator = () => {
           </div>
 
           <div className="mb-6 bg-white rounded-lg shadow p-4 md:p-6">
-            <ResultsTable results={results} />
+            <ResultsTable results={results} inputs={inputs} />
           </div>
 
           <TechnicalDetails inputs={inputs} results={results} />
