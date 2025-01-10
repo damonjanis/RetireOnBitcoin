@@ -106,6 +106,7 @@ const findOptimalAnnualExpenses = (inputs) => {
 };
 
 const formatNumber = (value) => {
+  if (value === undefined || value === null) return '0';
   return value.toLocaleString('en-US');
 };
 
@@ -419,7 +420,7 @@ const GrowthRatesDisplay = ({ growthRates }) => {
 };
 
 // Results Table Component
-const ResultsTable = ({ results, inputs }) => {
+const ResultsTable = ({ results, inputs, showCalculations, setShowCalculations, optimalExpenses }) => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const scrollContainerRef = useRef(null);
@@ -440,7 +441,24 @@ const ResultsTable = ({ results, inputs }) => {
 
   return (
     <div className="relative mb-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Year by Year Retirement Projections</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">Year by Year Retirement Projections</h2>
+        <button
+          onClick={() => setShowCalculations(true)}
+          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          View Calculations
+        </button>
+      </div>
+
+      <CalculationsModal
+        isOpen={showCalculations}
+        onClose={() => setShowCalculations(false)}
+        results={results}
+        inputs={inputs}
+        optimalExpenses={optimalExpenses}
+      />
+
       {/* Scroll Indicators */}
       {canScrollLeft && (
         <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
@@ -474,12 +492,12 @@ const ResultsTable = ({ results, inputs }) => {
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
                 <ColumnHeader 
-                  label="BTC Price Start" 
+                  label="BTC Start" 
                   tooltip="Bitcoin price at the start of the year"
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
                 <ColumnHeader 
-                  label="BTC Price End" 
+                  label="BTC End" 
                   tooltip="Bitcoin price at the end of the year, after growth"
                   className="text-xs sm:text-[11px] md:text-sm"
                 />
@@ -531,6 +549,204 @@ const ResultsTable = ({ results, inputs }) => {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CalculationsModal = ({ isOpen, onClose, results, inputs, optimalExpenses }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col text-gray-900">
+        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-gray-900">Retirement Projections Calculations</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-500"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto">
+          {results.map((row, index) => {
+            if (row.year === 'Today') return null;
+            const prevRow = results[index - 1];
+            const prevExpenses = prevRow ? prevRow.annualExpenses : inputs.annualExpenses;
+            const prevDebt = prevRow ? prevRow.totalDebt : 0;
+
+            return (
+              <div key={row.year} className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Year {row.year}</h3>
+                
+                {/* Summary Table */}
+                <div className="mb-6 overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Year
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Growth
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          BTC Start
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          BTC End
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-blue-500 uppercase tracking-wider">
+                          Portfolio
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-red-500 uppercase tracking-wider">
+                          Debt
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-green-500 uppercase tracking-wider">
+                          Net Worth
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          LTV
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Expenses
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      <tr>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                          {row.year}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-right text-gray-900">
+                          {row.growthRate}%
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-right text-gray-900">
+                          ${formatNumber(row.bitcoinPriceStart)}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-right text-gray-900">
+                          ${formatNumber(row.bitcoinPriceEnd)}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-right text-blue-600">
+                          ${formatNumber(row.portfolioValue)}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-right text-red-600">
+                          ${formatNumber(row.totalDebt)}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-right text-green-600">
+                          ${formatNumber(row.portfolioValue - row.totalDebt)}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-right text-gray-900">
+                          {row.ltvRatio}%
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-right text-gray-900">
+                          ${formatNumber(row.annualExpenses)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <h4 className="text-md font-medium text-gray-900 mb-4">Calculation Breakdown</h4>
+                <div className="space-y-6 pl-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-gray-900">BTC End</h4>
+                    <div className="pl-4 font-mono text-sm text-gray-700">
+                      BTC Start: ${formatNumber(row.bitcoinPriceStart)}<br />
+                      Growth: {row.growthRate}%<br />
+                      BTC End: ${formatNumber(row.bitcoinPriceStart)} × (1 + {row.growthRate}%) = ${formatNumber(row.bitcoinPriceEnd)}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-blue-600">Portfolio</h4>
+                    <div className="pl-4 font-mono text-sm text-gray-700">
+                      Bitcoin Amount: {inputs.bitcoinAmount?.toFixed(8) || '0.00000000'} BTC<br />
+                      Portfolio: {inputs.bitcoinAmount?.toFixed(8) || '0.00000000'} BTC × ${formatNumber(row.bitcoinPriceEnd)} = ${formatNumber(row.portfolioValue)}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-red-600">Debt</h4>
+                    <div className="pl-4 font-mono text-sm text-gray-700">
+                      Previous Debt: ${formatNumber(prevDebt)}<br />
+                      Interest Rate: {inputs.interestRate}%<br />
+                      Interest: ${formatNumber(prevDebt)} × {inputs.interestRate}% = ${formatNumber(prevDebt * inputs.interestRate/100)}<br />
+                      New Expenses: ${formatNumber(row.annualExpenses)}<br />
+                      Total Debt: Previous Debt + Interest + New Expenses<br />
+                      ${formatNumber(prevDebt)} + ${formatNumber(prevDebt * inputs.interestRate/100)} + ${formatNumber(row.annualExpenses)} = ${formatNumber(row.totalDebt)}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-green-600">Net Worth</h4>
+                    <div className="pl-4 font-mono text-sm text-gray-700">
+                      Portfolio: ${formatNumber(row.portfolioValue)}<br />
+                      Debt: ${formatNumber(row.totalDebt)}<br />
+                      Net Worth: ${formatNumber(row.portfolioValue)} - ${formatNumber(row.totalDebt)} = ${formatNumber(row.portfolioValue - row.totalDebt)}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-gray-900">LTV</h4>
+                    <div className="pl-4 font-mono text-sm text-gray-700">
+                      Formula: (Total Debt ÷ Start-of-Year Portfolio Value) × 100<br />
+                      Start Portfolio: {inputs.bitcoinAmount} BTC × ${formatNumber(row.bitcoinPriceStart)} = ${formatNumber(inputs.bitcoinAmount * row.bitcoinPriceStart)}<br />
+                      LTV: (${formatNumber(row.totalDebt)} ÷ ${formatNumber(inputs.bitcoinAmount * row.bitcoinPriceStart)}) × 100 = {row.ltvRatio}%
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-gray-900">Expenses</h4>
+                    <div className="pl-4 font-mono text-sm text-gray-700">
+                      {index === 0 ? (
+                        <>
+                          {inputs.useOptimalExpenses ? (
+                            <>
+                              <div className="space-y-2 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                <div>
+                                  <span className="font-medium">Optimal Annual Expenses: ${formatNumber(optimalExpenses)}</span>
+                                </div>
+                                <div className="text-sm text-gray-600 space-y-2">
+                                  <p>This optimal spending amount is calculated by:</p>
+                                  <ol className="list-decimal pl-4 space-y-1">
+                                    <li>Starting with your portfolio value: {inputs.bitcoinAmount} BTC × ${formatNumber(inputs.bitcoinPrice)} = ${formatNumber(inputs.bitcoinAmount * inputs.bitcoinPrice)}</li>
+                                    <li>Using binary search to find the maximum annual expenses that keeps your LTV ratio under {inputs.maxLTV || 50}% throughout all years</li>
+                                    <li>Taking into account:
+                                      <ul className="list-disc pl-4 mt-1">
+                                        <li>Bitcoin's projected growth rates (from {inputs.initialGrowthRate}% to {inputs.terminalGrowthRate}%)</li>
+                                        <li>Annual inflation rate of {inputs.inflationRate}%</li>
+                                        <li>Interest rate of {inputs.interestRate}% on accumulated debt</li>
+                                        <li>Time horizon of {inputs.years} years</li>
+                                      </ul>
+                                    </li>
+                                  </ol>
+                                  <p>This amount represents the highest sustainable annual spending that keeps your loan-to-value ratio safe, considering both market growth and debt accumulation.</p>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>Initial Annual Expenses: ${formatNumber(inputs.annualExpenses)}</>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          Previous Expenses: ${formatNumber(prevExpenses)}<br />
+                          Inflation Rate: {inputs.inflationRate}%<br />
+                          Expenses: ${formatNumber(prevExpenses)} × (1 + {inputs.inflationRate}%) = ${formatNumber(row.annualExpenses)}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {index < results.length - 1 && <hr className="my-6 border-gray-200" />}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -618,23 +834,23 @@ const TechnicalDetails = ({ inputs, results }) => {
 // Main Component
 const BitcoinRetirementCalculator = () => {
   const [inputs, setInputs] = useState({
-    bitcoinAmount: 3.2,
+    bitcoinAmount: 3,
     bitcoinPrice: null,
-    annualExpenses: 150000,
-    interestRate: 8,
     years: 20,
+    interestRate: 14,
     initialGrowthRate: 60,
     terminalGrowthRate: 15,
     inflationRate: 3,
-    maxLTV: 50
+    maxLTV: 50,
+    useOptimalExpenses: true,
+    annualExpenses: 150000
   });
 
   const [isFetchingPrice, setIsFetchingPrice] = useState(true);
   const [priceError, setPriceError] = useState(null);
-
-  const [results, setResults] = useState([]);
-  const [useOptimalExpenses, setUseOptimalExpenses] = useState(true);
   const [optimalExpenses, setOptimalExpenses] = useState(0);
+  const [results, setResults] = useState([]);
+  const [showCalculations, setShowCalculations] = useState(false);
 
   const growthRates = useMemo(() => 
     generateGrowthRates(inputs.initialGrowthRate, inputs.terminalGrowthRate, inputs.years),
@@ -671,23 +887,34 @@ const BitcoinRetirementCalculator = () => {
   useEffect(() => {
     // Only run calculations if we have a valid bitcoin price
     if (inputs.bitcoinPrice !== null) {
-      const calculationInputs = {
+      const baseInputs = {
         ...inputs,
-        growthRates,
-        annualExpenses: useOptimalExpenses ? optimalExpenses : inputs.annualExpenses
+        growthRates
       };
 
-      if (useOptimalExpenses) {
-        const optimal = findOptimalAnnualExpenses({ ...calculationInputs, growthRates });
+      if (inputs.useOptimalExpenses) {
+        // First calculate optimal expenses
+        const optimal = findOptimalAnnualExpenses(baseInputs);
         setOptimalExpenses(optimal);
-        const newResults = calculateProjections({ ...calculationInputs, annualExpenses: optimal });
+        
+        // Then use the optimal expenses for projections
+        const newResults = calculateProjections({
+          ...baseInputs,
+          annualExpenses: optimal
+        });
         setResults(newResults);
       } else {
-        const newResults = calculateProjections(calculationInputs);
+        // Use custom annual expenses for projections
+        const newResults = calculateProjections({
+          ...baseInputs,
+          annualExpenses: inputs.annualExpenses
+        });
         setResults(newResults);
       }
     }
-  }, [inputs, useOptimalExpenses, growthRates]);
+  }, [inputs.bitcoinPrice, inputs.bitcoinAmount, inputs.years, inputs.interestRate, 
+      inputs.initialGrowthRate, inputs.terminalGrowthRate, inputs.inflationRate,
+      inputs.maxLTV, inputs.useOptimalExpenses, inputs.annualExpenses, growthRates]);
 
   const handleInputChange = (field) => (value) => {
     setInputs(prev => ({
@@ -804,8 +1031,8 @@ const BitcoinRetirementCalculator = () => {
                   <label className="flex items-center gap-3 cursor-pointer touch-manipulation">
                     <input
                       type="radio"
-                      checked={useOptimalExpenses}
-                      onChange={() => setUseOptimalExpenses(true)}
+                      checked={inputs.useOptimalExpenses}
+                      onChange={() => setInputs(prev => ({ ...prev, useOptimalExpenses: true }))}
                       className="w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
                       name="expensesMode"
                     />
@@ -814,7 +1041,7 @@ const BitcoinRetirementCalculator = () => {
                       <p className="text-xs text-gray-500 mt-1">Find the maximum safe spending level based on your max LTV ratio</p>
                     </div>
                   </label>
-                  {useOptimalExpenses && (
+                  {inputs.useOptimalExpenses && (
                     <div className="mt-3 ml-7">
                       <InputField 
                         label="Max LTV Ratio (%)"
@@ -840,8 +1067,8 @@ const BitcoinRetirementCalculator = () => {
                   <label className="flex items-center gap-3 cursor-pointer touch-manipulation">
                     <input
                       type="radio"
-                      checked={!useOptimalExpenses}
-                      onChange={() => setUseOptimalExpenses(false)}
+                      checked={!inputs.useOptimalExpenses}
+                      onChange={() => setInputs(prev => ({ ...prev, useOptimalExpenses: false }))}
                       className="w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
                       name="expensesMode"
                     />
@@ -850,7 +1077,7 @@ const BitcoinRetirementCalculator = () => {
                       <p className="text-xs text-gray-500 mt-1">Enter your target annual spending amount</p>
                     </div>
                   </label>
-                  {!useOptimalExpenses && (
+                  {!inputs.useOptimalExpenses && (
                     <div className="mt-3 ml-7">
                       <InputField 
                         label="Annual Expenses (USD)"
@@ -941,7 +1168,13 @@ const BitcoinRetirementCalculator = () => {
           </div>
 
           <div className="mb-6 bg-white rounded-lg shadow p-4 md:p-6">
-            <ResultsTable results={results} inputs={inputs} />
+            <ResultsTable 
+              results={results} 
+              inputs={inputs} 
+              showCalculations={showCalculations}
+              setShowCalculations={setShowCalculations}
+              optimalExpenses={optimalExpenses}
+            />
           </div>
 
           <TechnicalDetails inputs={inputs} results={results} />
