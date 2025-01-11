@@ -34,7 +34,8 @@ const calculateProjections = (inputs) => {
     const year = i + 1;
     
     // First calculate interest on existing debt
-    totalInterest += totalBorrowed * (inputs.interestRate/100);
+    const newInterest = totalBorrowed * (inputs.interestRate/100);
+    totalInterest += newInterest;
     
     // Then add new borrowing
     totalBorrowed += inflatedExpenses;
@@ -656,47 +657,91 @@ const CalculationsModal = ({ isOpen, onClose, results, inputs, optimalExpenses }
                   <div className="space-y-2">
                     <h4 className="font-medium text-gray-900">BTC End</h4>
                     <div className="pl-4 font-mono text-sm text-gray-700">
-                      BTC Start: ${formatNumber(row.bitcoinPriceStart)}<br />
-                      Growth: {row.growthRate}%<br />
-                      BTC End: ${formatNumber(row.bitcoinPriceStart)} × (1 + {row.growthRate}%) = ${formatNumber(row.bitcoinPriceEnd)}
+                      <div className="mb-2">
+                        <strong>1. Growth Rate Application:</strong><br />
+                        Start Price: ${formatNumber(row.bitcoinPriceStart)}<br />
+                        Growth Rate: {row.growthRate}%<br />
+                        Growth Multiplier: 1 + {row.growthRate}% = {(1 + row.growthRate/100).toFixed(4)}
+                      </div>
+                      <div>
+                        <strong>2. Final Price:</strong><br />
+                        End Price: ${formatNumber(row.bitcoinPriceStart)} × {(1 + row.growthRate/100).toFixed(4)} = ${formatNumber(row.bitcoinPriceEnd)}
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <h4 className="font-medium text-blue-600">Portfolio</h4>
                     <div className="pl-4 font-mono text-sm text-gray-700">
-                      Bitcoin Amount: {inputs.bitcoinAmount?.toFixed(8) || '0.00000000'} BTC<br />
-                      Portfolio: {inputs.bitcoinAmount?.toFixed(8) || '0.00000000'} BTC × ${formatNumber(row.bitcoinPriceEnd)} = ${formatNumber(row.portfolioValue)}
+                      <div className="mb-2">
+                        <strong>1. Holdings:</strong><br />
+                        Bitcoin Amount: {inputs.bitcoinAmount?.toFixed(8) || '0.00000000'} BTC
+                      </div>
+                      <div>
+                        <strong>2. Value Calculation:</strong><br />
+                        End BTC Price: ${formatNumber(row.bitcoinPriceEnd)}<br />
+                        Portfolio Value: {inputs.bitcoinAmount?.toFixed(8) || '0.00000000'} BTC × ${formatNumber(row.bitcoinPriceEnd)} = ${formatNumber(row.portfolioValue)}
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <h4 className="font-medium text-red-600">Debt</h4>
                     <div className="pl-4 font-mono text-sm text-gray-700">
-                      Previous Debt: ${formatNumber(prevDebt)}<br />
-                      Interest Rate: {inputs.interestRate}%<br />
-                      Interest: ${formatNumber(prevDebt)} × {inputs.interestRate}% = ${formatNumber(prevDebt * inputs.interestRate/100)}<br />
-                      New Expenses: ${formatNumber(row.annualExpenses)}<br />
-                      Total Debt: Previous Debt + Interest + New Expenses<br />
-                      ${formatNumber(prevDebt)} + ${formatNumber(prevDebt * inputs.interestRate/100)} + ${formatNumber(row.annualExpenses)} = ${formatNumber(row.totalDebt)}
+                      <div className="mb-2">
+                        <strong>1. Interest Calculation:</strong><br />
+                        Previous Borrowed: ${formatNumber(row.totalBorrowed - row.annualExpenses)}<br />
+                        Interest Rate: {inputs.interestRate}%<br />
+                        New Interest: ${formatNumber(row.totalBorrowed - row.annualExpenses)} × {inputs.interestRate}% = ${formatNumber((row.totalBorrowed - row.annualExpenses) * inputs.interestRate/100)}
+                      </div>
+                      <div className="mb-2">
+                        <strong>2. New Borrowing:</strong><br />
+                        Previous Borrowed: ${formatNumber(row.totalBorrowed - row.annualExpenses)}<br />
+                        New Expenses: ${formatNumber(row.annualExpenses)}<br />
+                        Total Borrowed: ${formatNumber(row.totalBorrowed)}
+                      </div>
+                      <div>
+                        <strong>3. Total Debt:</strong><br />
+                        Total Borrowed: ${formatNumber(row.totalBorrowed)}<br />
+                        Total Interest: ${formatNumber(row.totalInterest)}<br />
+                        Total Debt: ${formatNumber(row.totalBorrowed)} + ${formatNumber(row.totalInterest)} = ${formatNumber(row.totalDebt)}
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <h4 className="font-medium text-green-600">Net Worth</h4>
                     <div className="pl-4 font-mono text-sm text-gray-700">
-                      Portfolio: ${formatNumber(row.portfolioValue)}<br />
-                      Debt: ${formatNumber(row.totalDebt)}<br />
-                      Net Worth: ${formatNumber(row.portfolioValue)} - ${formatNumber(row.totalDebt)} = ${formatNumber(row.portfolioValue - row.totalDebt)}
+                      <div className="mb-2">
+                        <strong>1. Assets:</strong><br />
+                        Portfolio Value: ${formatNumber(row.portfolioValue)}
+                      </div>
+                      <div className="mb-2">
+                        <strong>2. Liabilities:</strong><br />
+                        Total Debt: ${formatNumber(row.totalDebt)}
+                      </div>
+                      <div>
+                        <strong>3. Net Worth Calculation:</strong><br />
+                        Net Worth: ${formatNumber(row.portfolioValue)} - ${formatNumber(row.totalDebt)} = ${formatNumber(row.portfolioValue - row.totalDebt)}
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <h4 className="font-medium text-gray-900">LTV</h4>
                     <div className="pl-4 font-mono text-sm text-gray-700">
-                      Formula: (Total Debt ÷ Start-of-Year Portfolio Value) × 100<br />
-                      Start Portfolio: {inputs.bitcoinAmount} BTC × ${formatNumber(row.bitcoinPriceStart)} = ${formatNumber(inputs.bitcoinAmount * row.bitcoinPriceStart)}<br />
-                      LTV: (${formatNumber(row.totalDebt)} ÷ ${formatNumber(inputs.bitcoinAmount * row.bitcoinPriceStart)}) × 100 = {row.ltvRatio}%
+                      <div className="mb-2">
+                        <strong>1. Portfolio Value at Start of Year:</strong><br />
+                        Bitcoin Amount: {inputs.bitcoinAmount} BTC<br />
+                        Start Price: ${formatNumber(row.bitcoinPriceStart)}<br />
+                        Start Portfolio: {inputs.bitcoinAmount} BTC × ${formatNumber(row.bitcoinPriceStart)} = ${formatNumber(inputs.bitcoinAmount * row.bitcoinPriceStart)}
+                      </div>
+                      <div className="mb-2">
+                        <strong>2. LTV Calculation:</strong><br />
+                        Total Debt: ${formatNumber(row.totalDebt)}<br />
+                        Portfolio Value: ${formatNumber(inputs.bitcoinAmount * row.bitcoinPriceStart)}<br />
+                        LTV: (${formatNumber(row.totalDebt)} ÷ ${formatNumber(inputs.bitcoinAmount * row.bitcoinPriceStart)}) × 100 = {row.ltvRatio}%
+                      </div>
                     </div>
                   </div>
 
@@ -709,36 +754,22 @@ const CalculationsModal = ({ isOpen, onClose, results, inputs, optimalExpenses }
                             <>
                               <div className="space-y-2 bg-blue-50 p-3 rounded-lg border border-blue-100">
                                 <div>
-                                  <span className="font-medium">Optimal Annual Expenses: ${formatNumber(optimalExpenses)}</span>
-                                </div>
-                                <div className="text-sm text-gray-600 space-y-2">
-                                  <p>This optimal spending amount is calculated by:</p>
-                                  <ol className="list-decimal pl-4 space-y-1">
-                                    <li>Starting with your portfolio value: {inputs.bitcoinAmount} BTC × ${formatNumber(inputs.bitcoinPrice)} = ${formatNumber(inputs.bitcoinAmount * inputs.bitcoinPrice)}</li>
-                                    <li>Using binary search to find the maximum annual expenses that keeps your LTV ratio under {inputs.maxLTV || 50}% throughout all years</li>
-                                    <li>Taking into account:
-                                      <ul className="list-disc pl-4 mt-1">
-                                        <li>Bitcoin's projected growth rates (from {inputs.initialGrowthRate}% to {inputs.terminalGrowthRate}%)</li>
-                                        <li>Annual inflation rate of {inputs.inflationRate}%</li>
-                                        <li>Interest rate of {inputs.interestRate}% on accumulated debt</li>
-                                        <li>Time horizon of {inputs.years} years</li>
-                                      </ul>
-                                    </li>
-                                  </ol>
-                                  <p>This amount represents the highest sustainable annual spending that keeps your loan-to-value ratio safe, considering both market growth and debt accumulation.</p>
+                                  <span className="font-medium">Using Optimal Annual Expenses: ${formatNumber(optimalExpenses)}</span><br />
+                                  <small className="text-gray-600">This amount keeps the LTV ratio below {inputs.maxLTV || 50}% throughout retirement</small>
                                 </div>
                               </div>
                             </>
                           ) : (
-                            <>Initial Annual Expenses: ${formatNumber(inputs.annualExpenses)}</>
+                            <>Starting Annual Expenses: ${formatNumber(inputs.annualExpenses)}</>
                           )}
                         </>
                       ) : (
-                        <>
-                          Previous Expenses: ${formatNumber(prevExpenses)}<br />
+                        <div>
+                          <strong>Inflation Adjustment:</strong><br />
+                          Previous Year Expenses: ${formatNumber(prevExpenses)}<br />
                           Inflation Rate: {inputs.inflationRate}%<br />
-                          Expenses: ${formatNumber(prevExpenses)} × (1 + {inputs.inflationRate}%) = ${formatNumber(row.annualExpenses)}
-                        </>
+                          New Annual Expenses: ${formatNumber(prevExpenses)} × (1 + {inputs.inflationRate}% inflation) = ${formatNumber(row.annualExpenses)}
+                        </div>
                       )}
                     </div>
                   </div>
